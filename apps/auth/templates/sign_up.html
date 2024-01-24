@@ -1,52 +1,135 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block title%} SignUp an Account in ZyCurrency {%
+endblock %} {% block body%}
+<style>
+  .blue-linear {
+    background: linear-gradient(to bottom, #007bff, #ffffff);
+  }
+</style>
+<div class="container-fluid blue-linear">
+  <div class="d-flex min-vh-100 justify-content-center align-items-center">
+    <div class="border w-50 rounded bg-white">
+      <div class="text-center m-3">
+        <h3 class="text-primary fw-bold">ZyCurrency</h3>
+      </div>
+      <div class="mb-3 text-center">
+        <h4>Sign Up Account</h4>
+      </div>
+      <form method="POST">
+        {{ form.csrf_token }}
+        <div class="form-group mb-3 col-10 mx-auto">
+          <label for="email" class="form-label">Email Address</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            name="email"
+            placeholder="email"
+            {% if form.email.data %}
+              value="{{ form.email.data }}"
+            {% endif %}
+          />
+          <div class="form-text text-muted">
+            We'll never share your email with anyone else.
+          </div>
+          {% if form.errors.get('email') %}
+          <div class="text-danger small">{{ form.errors.get('email')[0] }}</div>
+          {% endif %}
+        </div>
 
-{% block body%}
-    <div class="content">
-        <form method="POST">
-            <h3 align="center">Sign Up</h3>
-            <div class="form-group">
-              <label for="email">Email Address</label>
-              <input
-                type="email"
-                class="form-control"
-                id="email"
-                name="email"
-                placeholder="Enter email"
-              />
+        <div class="row col-10 mb-3 mx-auto">
+          <div class="form-group col-md-6 ps-0">
+            <label for="first_name" class="form-label">First Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="first_name"
+              name="first_name"
+              placeholder="first name"
+              {% if form.first_name.data %}
+                value="{{ form.first_name.data }}"
+              {% endif %}
+            />
+            {% if form.errors.get('first_name') %}
+            <div class="text-danger small">
+              {{ form.errors.get('first_name')[0] }}
             </div>
-            <div class="form-group">
-              <label for="firstName">First Name</label>
-              <input
-                type="text"
-                class="form-control"
-                id="firstName"
-                name="firstName"
-                placeholder="Enter first name"
-              />
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-6">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="last_name"
+              name="last_name"
+              placeholder="last name"
+              {% if form.last_name.data %}
+                value="{{ form.last_name.data }}"
+              {% endif %}
+            />
+            {% if form.errors.get('last_name') %}
+            <div class="text-danger small">
+              {{ form.errors.get('last_name')[0] }}
             </div>
-            <div class="form-group">
-              <label for="password1">Password</label>
-              <input
-                type="password"
-                class="form-control"
-                id="password1"
-                name="password1"
-                placeholder="Enter password"
-              />
-            </div>
-            <div class="form-group">
-              <label for="password2">Password (Confirm)</label>
-              <input
-                type="password"
-                class="form-control"
-                id="password2"
-                name="password2"
-                placeholder="Confirm password"
-              />
-            </div>
-            <br />
-            <button type="submit" class="btn btn-primary">Submit</button>
-          </form>
+            {% endif %}
+          </div>
+        </div>
+        <div class="form-group mb-3 col-10 mx-auto">
+          <label for="password" class="form-label">Password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            placeholder="password"
+          />
+          {% if form.errors.get('password') %}
+          <div class="text-danger small">
+            {{ form.errors.get('password')[0] }}
+          </div>
+          {% endif %}
+        </div>
+        <div class="form-group mb-3 col-10 mx-auto">
+          <label for="confirm_password" class="form-label"
+            >Confirm Password</label
+          >
+          <input
+            type="password"
+            class="form-control"
+            id="confirm_password"
+            name="confirm_password"
+            placeholder="confirm password"
+          />
+          {% if form.errors.get('confirm_password') %}
+          <div class="text-danger small">
+            {{ form.errors.get('confirm_password')[0] }}
+          </div>
+          {% endif %}
+        </div>
+        <div class="mb-3 col-10 mx-auto">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %} 
+              {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                {{ message }}
+              </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+        </div>
+        <div class="mb-3 mx-auto col-10">
+          <a href="{{ login_url }}" class="col-3"
+            >Have an Account? Proceed to Login</a
+          >
+        </div>
+        <div class="d-grid col-3 mx-auto mb-3">
+          <button type="submit" class="btn btn-primary rounded-pill">
+            Submit
+          </button>
+        </div>
+      </form>
     </div>
-
+  </div>
+</div>
 {% endblock %}

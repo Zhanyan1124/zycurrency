@@ -9,14 +9,13 @@
 
 <div class="container-fluid blue-linear">
   <div class="d-flex min-vh-100 justify-content-center align-items-center">
-    <div class="border w-50" style="background-color: #ffffff">
-      <div class="m-3">
-        <h4 align="center" style="color: blue; font-weight: bold">
-          ZyCurrency
-        </h4>
+    <div class="border w-50 rounded bg-white">
+      <div class="text-center m-3">
+        <h3 class="text-primary fw-bold">ZyCurrency</h3>
       </div>
 
       <form method="POST">
+        {{ form.csrf_token }}
         <div class="form-floating mb-3 col-10 mx-auto">
           <input
             type="email"
@@ -26,6 +25,11 @@
             placeholder="Email Address"
           />
           <label for="email">Email Address</label>
+          {% if form.errors.get('email') %}
+          <div class="text-danger small">
+            {{ form.errors.get('email')[0] }}
+          </div>
+          {% endif %}
         </div>
 
         <div class="form-floating mb-3 col-10 mx-auto">
@@ -37,6 +41,23 @@
             placeholder="Password"
           />
           <label for="password">Password</label>
+          {% if form.errors.get('password') %}
+          <div class="text-danger small">
+            {{ form.errors.get('password')[0] }}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3 col-10 mx-auto">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %} 
+              {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                {{ message }}
+              </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
         </div>
 
         <div class="row mb-3 mx-auto col-10">
@@ -51,7 +72,6 @@
           <button 
             type="submit"
             class="btn btn-primary rounded-pill"
-            style="color: "
           >
             Login
           </button>
