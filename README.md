@@ -1,1 +1,1 @@
-# zyexchange
+# zycurrency
