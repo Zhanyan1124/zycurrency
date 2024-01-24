@@ -8,7 +8,7 @@ from apps import db
 
 auth_bp = Blueprint('auth', __name__, template_folder='templates')
 
-@auth_bp.route('/login')
+@auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
 
@@ -20,8 +20,7 @@ def login():
             return redirect(url_for('home'))
         else:
             flash('Invalid username or password', 'danger')
-
-    return render_template('login.html', form=form)
+    return render_template('login.html', form=form, signup_url=url_for('auth.signup'))
 
 @auth_bp.route('/logout')
 @login_required
