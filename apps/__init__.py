@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-
+from flask_migrate import Migrate
 import os
 from dotenv import load_dotenv
 
@@ -13,6 +13,7 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.getenv("DB_NAME")}'
+    migrate = Migrate(app, db) 
     db.init_app(app)
 
 
@@ -26,7 +27,7 @@ def create_app():
     
     with app.app_context():
         db.create_all()
-        print('Created Database!')
+        print('Connected to Database')
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'

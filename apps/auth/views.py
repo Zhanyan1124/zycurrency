@@ -22,7 +22,10 @@ def login():
     if request.method == 'POST' and form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
 
-        if user and check_password_hash(user.password, form.password.data):
+        if user and user.password is None:
+            flash('This account does not have password', 'danger')
+
+        elif user and check_password_hash(user.password, form.password.data):
             login_user(user)
             return redirect(url_for('views.home'))
         else:
@@ -107,16 +110,22 @@ def google_login_callback():
     userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
     uri, headers, body = client.add_token(userinfo_endpoint)
     userinfo_response = requests.get(uri, headers=headers, data=body)
+
     if userinfo_response.json().get("email_verified"):
         unique_id = userinfo_response.json()["sub"]
-        users_email = userinfo_response.json()["email"]
-        picture = userinfo_response.json()["picture"]
-        users_name = userinfo_response.json()["given_name"]
+        email = userinfo_response.json()["email"]
+        picture_url = userinfo_response.json()["picture"]
+        first_name = userinfo_response.json()["given_name"]
+        if userinfo_response.json().get("family_name"):
+            last_name = userinfo_response.json()["family_name"]
+        else:
+            last_name= None
+        
     else:
         return "User email not available or not verified by Google.", 500
-    
+
     user = User(
-        first_name=users_name, email=users_email
+        first_name=first_name, last_name=last_name, email=email, picture_url= picture_url
     )
     
     existing_user = User.query.filter_by(email=user.email).first()

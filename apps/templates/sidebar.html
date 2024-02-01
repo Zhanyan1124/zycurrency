@@ -1,8 +1,85 @@
-{% extends 'base.html' %}
-{% block sidebar %}
-<div class="wrapper">
-    <aside id="sidebar">
-  
-    </aside>
+{% extends 'base.html' %} {% block body %}
+<div class="d-flex">
+  <aside id="sidebar" class="expand">
+    <div class="d-flex">
+      <button class="toggle-btn" type="button">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="sidebar-logo">
+        <a href="#"> ZyCurrency </a>
+      </div>
+    </div>
+    <ul class="sidebar-nav">
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link">
+          <i class="fas fa-house"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link">
+          <i class="fas fa-arrow-right-arrow-left"></i>
+          <span>Converter</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link">
+          <i class="fas fa-chart-line"></i>
+          <span>Exchange Rate Changes</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link">
+          <i class="fas fa-chart-line"></i>
+          <span>RSI Value Changes</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link">
+          <i class="fas fa-chart-column"></i>
+          <span>Currency Comparison</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link">
+          <i class="fas fa-magnifying-glass-chart"></i>
+          <span class="text-wrap wrap">Currency Correlation Analysis</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <a href="/auth/logout" class="sidebar-link text-light">
+        <i class="fa-solid fa-gear"></i>
+        <span class="text-wrap wrap">Notification Setting</span>
+      </a>
+
+      <a href="/auth/logout" class="sidebar-link text-light">
+        <i class="fas fa-right-from-bracket"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="col">
+      <div class="d-flex align-items-center justify-content-end p-3">
+        <i class="fa-solid fa-bell fa-xl"  style="color: #4367f9; margin-right: 60px;" ></i>
+
+        {% if current_user.picture_url%}
+        <img src="{{ current_user.picture_url }}" alt="{{ current_user.first_name }} {{ current_user.last_name }}" class="border rounded-circle" style="width: 30px; height: 30px; margin-right:10px">
+        {% else %}
+        <i class="fa-solid fa-user align-self-center border rounded-circle p-2 border-dark mx-10" style="margin-right: 10px;"></i>
+        {% endif %}
+
+        {{current_user.first_name}} 
+        {% if current_user.last_name %}
+        {{current_user.last_name}} 
+        {% endif %}
+      </div>
+
+      <div>{% block content %} {% endblock %}</div>
+    </div>
+  </div>
 </div>
 {% endblock %}
