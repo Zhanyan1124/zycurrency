@@ -64,12 +64,13 @@
   <div class="main">
     <div class="col">
       <div class="d-flex align-items-center justify-content-end p-3">
-        <i class="fa-solid fa-bell fa-xl"  style="color: #4367f9; margin-right: 60px;" ></i>
+        <i class="fa-solid fa-bell fa-xl"  style="color: #000; margin-right: 60px;" ></i>
+
 
         {% if current_user.picture_url%}
         <img src="{{ current_user.picture_url }}" alt="{{ current_user.first_name }} {{ current_user.last_name }}" class="border rounded-circle" style="width: 30px; height: 30px; margin-right:10px">
         {% else %}
-        <i class="fa-solid fa-user align-self-center border rounded-circle p-2 border-dark mx-10" style="margin-right: 10px;"></i>
+        <i class="fa-solid fa-user align-self-center border rounded-circle p-2 mx-10" style="color: #fffafa; margin-right: 10px; background-color: #787878"></i>
         {% endif %}
 
         {{current_user.first_name}} 
