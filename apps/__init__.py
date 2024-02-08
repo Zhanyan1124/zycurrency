@@ -21,6 +21,8 @@ def create_app():
     app.register_blueprint(views, url_prefix='/')   
     from apps.auth.views import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    from apps.currency.views import currency_bp
+    app.register_blueprint(currency_bp, url_prefix='/currency')
     
     from apps.auth.models import User
     from apps.models import Country

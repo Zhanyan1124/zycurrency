@@ -50,7 +50,7 @@ def signup():
                 raise EmailExistedException('This email address is already registered.')
             
             hashed_password = generate_password_hash(form.password.data, method='scrypt')
-            new_user = User(email=form.email.data, password=hashed_password, first_name = form.first_name.data, last_name = form.last_name.data)
+            new_user = User(email=form.email.data, password=hashed_password, first_name = form.first_name.data, last_name = form.last_name.data, default_cur = form.default_cur.data.code, nationality = form.nationality.data.code)
             db.session.add(new_user)
             db.session.commit()
             login_user(new_user, remember=True)

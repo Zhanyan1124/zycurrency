@@ -1,0 +1,63 @@
+{% extends 'sidebar.html' %} {% block content %}
+<div class="container-fluid">
+  <h3 class="text-center" style="margin-bottom: 25px">Currency Converter</h3>
+  <div class="d-flex justify-content-center align-items-center">
+    <div class="w-75-m w-50-l">
+      <form method="POST">
+        {{ form.csrf_token }}
+        <div class="form-group col-12 mx-auto" style="margin-bottom: 25px">
+          <label for="amount" class="form-label">Amount </label>
+          <input
+            type="text"
+            class="form-control"
+            id="amount"
+            name="amount"
+            {%
+            if
+            form.amount.data
+            %}
+            value="{{ form.amount.data }}"
+            {%
+            endif
+            %}
+            required
+          />
+          {% if form.errors.get('amount') %}
+          <div class="text-danger small">
+            {{ form.errors.get('amount')[0] }}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="form-group col-12 mx-auto" style="margin-bottom: 25px">
+          <label for="from_cur" class="form-label">From Currency </label>
+          {{ form.from_cur(class="form-select") }}
+        </div>
+
+        <div class="text-center" style="margin-bottom: 25px">
+          <i class="fa-solid fa-arrow-right-arrow-left fa-rotate-90 fa-2xl"></i>
+        </div>
+
+        <div class="form-group col-12 mx-auto" style="margin-bottom: 45px">
+          <label for="to_cur" class="form-label">To Currency </label>
+          {{ form.to_cur(class="form-select") }}
+        </div>
+
+        <div class="d-grid col-3 mx-auto mb-3" style="margin-bottom: 45px">
+          <button type="submit" class="btn btn-primary square">Convert</button>
+        </div>
+        {% if exchange_rate %}
+        <div class="text-center" id="exchange_rate">
+            Exchange Rate = <span style="font-weight:bold"> {{exchange_rate}} </span>
+        </div>
+        {% endif %}
+        {% if form.amount.data and convert_result %}
+        <div class="text-center" style="font-weight:bold; font-size:20px" id="result">
+            {{form.amount.data}} {{form.from_cur.data.code}} = {{convert_result}} {{form.to_cur.data.code}}
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
