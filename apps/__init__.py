@@ -3,18 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_seeder import FlaskSeeder
-import os
-from dotenv import load_dotenv
+from config import Config
 
-load_dotenv()
 db = SQLAlchemy()
 migrate = Migrate()
 seeder = FlaskSeeder()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.getenv("DB_NAME")}'
+    app.config.from_object(Config)
+
     db.init_app(app)
     migrate.init_app(app, db)
     seeder.init_app(app, db)

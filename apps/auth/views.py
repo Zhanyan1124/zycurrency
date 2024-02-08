@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .forms import SignUpForm, LoginForm
@@ -69,16 +69,12 @@ def signup():
     return render_template('sign_up.html', form=form, login_url=url_for('auth.login'))
 
 
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_DISCOVERY_URL = os.getenv("GOOGLE_DISCOVERY_URL")
-
-client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 @auth_bp.route('/google_login')
 def google_login():
-    google_provider_cfg = get_google_provider_cfg(GOOGLE_DISCOVERY_URL)
+    client_id, client_secret, google_url = get_google_credentials()
+    client = WebApplicationClient(client_id)   
+    google_provider_cfg = get_google_provider_cfg(google_url)
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
@@ -90,8 +86,10 @@ def google_login():
 
 @auth_bp.route('/google_login/callback')
 def google_login_callback():
+    client_id, client_secret, google_url = get_google_credentials()
+    client = WebApplicationClient(client_id)  
     code = request.args.get("code")
-    google_provider_cfg = get_google_provider_cfg(GOOGLE_DISCOVERY_URL)
+    google_provider_cfg = get_google_provider_cfg(google_url)
     token_endpoint = google_provider_cfg["token_endpoint"]
     token_url, headers, body = client.prepare_token_request(
         token_endpoint,
@@ -103,7 +101,7 @@ def google_login_callback():
         token_url,
         headers=headers,
         data=body,
-        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+        auth=(client_id, client_secret),
     )
     client.parse_request_body_response(json.dumps(token_response.json()))
 
@@ -142,3 +140,11 @@ def google_login_callback():
 
 def get_google_provider_cfg(url):
     return requests.get(url).json()
+
+def get_google_credentials():
+    with current_app.app_context():
+        client_id = current_app.config["GOOGLE_CLIENT_ID"]
+        client_secret = current_app.config["GOOGLE_CLIENT_SECRET"]
+        google_url = current_app.config["GOOGLE_DISCOVERY_URL"]
+
+        return (client_id, client_secret, google_url)
