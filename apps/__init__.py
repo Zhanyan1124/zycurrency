@@ -3,11 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_seeder import FlaskSeeder
+from flask_mail import Mail
 from config import Config
+
 
 db = SQLAlchemy()
 migrate = Migrate()
 seeder = FlaskSeeder()
+mail = Mail()
 
 def create_app():
     app = Flask(__name__)
@@ -17,6 +20,8 @@ def create_app():
     migrate.init_app(app, db)
     seeder.init_app(app, db)
 
+    mail.init_app(app)
+    
     from apps.views import views
     app.register_blueprint(views, url_prefix='/')   
     from apps.auth.views import auth_bp

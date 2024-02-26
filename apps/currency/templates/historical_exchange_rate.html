@@ -1,0 +1,81 @@
+{% extends 'sidebar.html' %} {% block content %}
+<div class="container-fluid">
+  <h3 class="text-center" style="margin-bottom: 25px">Historical Exchange Rate Changes</h3>
+  <div class="d-flex justify-content-center align-items-center">
+    <div style="width:70%">
+      <form method="POST">
+        {{ form.csrf_token }}
+        <div class="row justify-content-between align-items-center" style="margin-bottom: 50px">
+          <div class="form-group col-5" >
+              <label for="from_cur" class="form-label">From Currency </label>
+              {{ form.from_cur(class="form-select") }}
+          </div>
+      
+          <div class="form-group col-2 text-center">
+              <i class="fa-solid fa-arrow-right-arrow-left fa-lg"></i>
+          </div>
+      
+          <div class="form-group col-5">
+              <label for="to_cur" class="form-label">To Currency </label>
+              {{ form.to_cur(class="form-select") }}
+          </div>
+        </div>
+
+        <div class="form-group col-3" style="margin-bottom: 25px">
+          <label for="duration" class="form-label">Duration </label>
+          {{ form.duration(class="form-select") }}
+        </div>
+
+        <div class="d-grid col-3 mx-auto" style="margin-bottom: 70px">
+          <button type="submit" class="btn btn-primary square">View</button>
+        </div>
+      </form>
+
+      {% if historical_data %}
+      <canvas id="exchangeChart" width="400" height="200"></canvas>
+      {% endif%}
+    </div>
+  </div>
+</div>
+
+<script>
+  var data = {{ historical_data | tojson }};
+
+  var currencies = Object.keys(data);
+  var datasets = [];
+  var dates = [];
+
+  currencies.forEach(function(currency) {
+    dates=dates.concat(Object.keys(data[currency]));
+    var exchangeRates = Object.values(data[currency]);
+    var dataset = {
+        label: currency + ' Exchange Rate',
+        data: exchangeRates,
+        borderColor: 'red', 
+        backgroundColor: 'red',
+        borderWidth: 1
+    };
+
+    datasets.push(dataset);
+});
+
+  var ctx = document.getElementById('exchangeChart').getContext('2d');
+  var exchangeChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+          labels: dates, 
+          datasets: datasets
+      },
+      options: {
+          scales: {
+              yAxes: [{
+                  ticks: {
+                      beginAtZero: false
+                  }
+              }]
+          }
+      }
+  });
+
+</script>
+{% endblock %}

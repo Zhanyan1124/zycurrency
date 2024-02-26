@@ -8,8 +8,8 @@ import os
 import requests
 import json
 from oauthlib.oauth2 import WebApplicationClient
-
-from apps import db
+from flask_mail import Message
+from apps import db,mail 
 
 
 
@@ -42,7 +42,6 @@ def logout():
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = SignUpForm()
-    
     try:
         if request.method == 'POST' and form.validate_on_submit():
             existing_user = User.query.filter_by(email=form.email.data).first()
@@ -50,10 +49,22 @@ def signup():
                 raise EmailExistedException('This email address is already registered.')
             
             hashed_password = generate_password_hash(form.password.data, method='scrypt')
-            new_user = User(email=form.email.data, password=hashed_password, first_name = form.first_name.data, last_name = form.last_name.data, default_cur = form.default_cur.data.code, nationality = form.nationality.data.code)
+            if form.default_cur.data:
+                default_cur = form.default_cur.data.code
+            else:
+                default_cur = None
+            if form.nationality.data:
+                nationality= form.nationality.data.code
+            else:
+                nationality= None
+            new_user = User(email=form.email.data, password=hashed_password, first_name = form.first_name.data, last_name = form.last_name.data, default_cur = default_cur, nationality = nationality)
             db.session.add(new_user)
             db.session.commit()
-            login_user(new_user, remember=True)
+            msg = Message("Activate ur account on ZyCurrency", 
+                  sender=current_app.config["MAIL_USERNAME"], 
+                  recipients=["zhanyan1124@gmail.com"])
+            msg.body = "Body of the email"
+            mail.send(msg)
             flash('Sign up successful. You may proceed to log in.', 'success')
             return redirect(url_for('auth.login'))
         
