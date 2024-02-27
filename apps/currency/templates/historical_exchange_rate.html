@@ -5,19 +5,43 @@
     <div style="width:70%">
       <form method="POST">
         {{ form.csrf_token }}
-        <div class="row justify-content-between align-items-center" style="margin-bottom: 50px">
-          <div class="form-group col-5" >
-              <label for="from_cur" class="form-label">From Currency </label>
-              {{ form.from_cur(class="form-select") }}
+        <div class="row justify-content-between align-items-center" style="margin-bottom: 30px">
+          <div class="form-group col-4 mx-auto" style="margin-bottom: 25px">
+            <label for="from_cur" class="form-label">From Currency </label>
+            <select class="form-select" id="from_cur" name="from_cur">
+              {% for currency in currencies %}
+              {% if from_cur and from_cur==currency.code%}
+                  <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" selected>
+                    {{ currency.code }} - {{ currency.name }}
+                  </option>
+              {% else %}
+                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
+                  {{ currency.code }} - {{ currency.name }}
+                </option>
+              {% endif %}
+              {% endfor %}
+            </select>
           </div>
-      
+          
           <div class="form-group col-2 text-center">
-              <i class="fa-solid fa-arrow-right-arrow-left fa-lg"></i>
+              <i class="fa-solid fa-arrow-right-arrow-left fa-lg cursor-pointer" id='exchange_icon'></i>
           </div>
       
-          <div class="form-group col-5">
-              <label for="to_cur" class="form-label">To Currency </label>
-              {{ form.to_cur(class="form-select") }}
+          <div class="form-group col-4 mx-auto" style="margin-bottom: 30px">
+            <label for="to_cur" class="form-label">To Currency </label>
+            <select class="form-select" id="to_cur" name="to_cur">
+              {% for currency in currencies %}
+              {% if to_cur and to_cur==currency.code%}
+                  <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" selected>
+                    {{ currency.code }} - {{ currency.name }}
+                  </option>
+              {% else %}
+                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
+                  {{ currency.code }} - {{ currency.name }}
+                </option>
+              {% endif %}
+              {% endfor %}
+            </select>
           </div>
         </div>
 
@@ -26,12 +50,24 @@
           {{ form.duration(class="form-select") }}
         </div>
 
-        <div class="d-grid col-3 mx-auto" style="margin-bottom: 70px">
+        <div class="d-grid col-3 mx-auto" style="margin-bottom: 50px">
           <button type="submit" class="btn btn-primary square">View</button>
         </div>
       </form>
 
+
+      
       {% if historical_data %}
+      <div class="row justify-content-between align-items-center" style="margin-bottom: 20px" >
+        <div class="col-6">
+          <span class='fw-bold'> Changes ({{from_cur}}/{{to_cur}}): 
+            {% if changes > 0%} <span style="color:green">+{{changes}}%</span>
+            {% else %}  <span style="color:red">{{changes}}%</span>
+            {% endif %}
+          </span>
+        </div>
+        <button class="btn btn-primary square col-2 btn-sm"> <i class="fa-solid fa-bell" style="color: #ffffff;margin-right:15px"></i>   Set Alert </button>
+      </div>
       <canvas id="exchangeChart" width="400" height="200"></canvas>
       {% endif%}
     </div>
@@ -39,6 +75,43 @@
 </div>
 
 <script>
+  $(document).ready(function() {
+    function formatOption(option) {
+      if (!option.id) {
+          return option.text;
+      }
+
+      var imageUrl = $(option.element).data('image');
+      if (!imageUrl) {
+        return option.text;
+    }
+
+      return $('<span><img src="' + imageUrl + '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' + option.text + '</span>');
+    }
+    
+    
+
+    $('#from_cur').select2({
+      theme: 'bootstrap-5',
+      templateResult: formatOption,
+      templateSelection: formatOption
+    });
+
+    $('#to_cur').select2({
+      theme: 'bootstrap-5',
+      templateResult: formatOption,
+      templateSelection: formatOption
+    });
+
+    $('#exchange_icon').click(function() {
+      var from_cur = $('#from_cur').val();
+      var to_cur = $('#to_cur').val();
+  
+      $('#from_cur').val(to_cur).trigger('change');
+      $('#to_cur').val(from_cur).trigger('change');
+    });
+  });
+
   var data = {{ historical_data | tojson }};
 
   var currencies = Object.keys(data);

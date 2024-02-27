@@ -10,6 +10,8 @@ class CountrySeeder(Seeder):
     self.priority = 2
 
   def run(self):
+    db.session.query(Country).delete()
+    db.session.commit()
     if db.session.query(Country).first() is None:
       print('Adding Country Seeder ... ') 
       all_countries = list(pycountry.countries)
@@ -22,10 +24,9 @@ class CountrySeeder(Seeder):
                 country_found = CountryInfo(country.name)
                 if(country_found):
                   currencies = country_found.currencies()
-                  print(country.name)
                   currency = currencies[0]
                   if db.session.query(Currency).filter_by(code=currency).first():
-                    new_country = Country(code=country.alpha_3, name=country.name, flag=country.flag, currency_code=currency)
+                    new_country = Country(code=country.alpha_3, name=country.name, currency_code=currency)
                     db.session.add(new_country)
             except Exception as e:
                 print(f"Error processing {country.name}: {e}")

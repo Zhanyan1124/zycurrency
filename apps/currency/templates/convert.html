@@ -33,24 +33,36 @@
           <label for="from_cur" class="form-label">From Currency </label>
           <select class="form-select" id="from_cur" name="from_cur">
             {% for currency in currencies %}
-                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/us.png') }}">
+            {% if from_cur and from_cur==currency.code%}
+                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" selected>
                   {{ currency.code }} - {{ currency.name }}
                 </option>
+            {% else %}
+              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
+                {{ currency.code }} - {{ currency.name }}
+              </option>
+            {% endif %}
             {% endfor %}
           </select>
         </div>
 
         <div class="text-center" style="margin-bottom: 25px">
-          <i class="fa-solid fa-arrow-right-arrow-left fa-rotate-90 fa-2xl"></i>
+          <i class="fa-solid fa-arrow-right-arrow-left fa-rotate-90 fa-2xl cursor-pointer" id="exchange_icon" ></i>
         </div>
 
         <div class="form-group col-12 mx-auto" style="margin-bottom: 45px">
           <label for="to_cur" class="form-label">To Currency </label>
           <select class="form-select" id="to_cur" name="to_cur">
             {% for currency in currencies %}
-              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/us.png') }}">
+            {% if to_cur and to_cur==currency.code%}
+                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" selected>
+                  {{ currency.code }} - {{ currency.name }}
+                </option>
+            {% else %}
+              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
                 {{ currency.code }} - {{ currency.name }}
               </option>
+            {% endif %}
             {% endfor %}
           </select>
         </div>
@@ -87,7 +99,6 @@
 
       return $('<span><img src="' + imageUrl + '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' + option.text + '</span>');
     }
-    
 
     $('#from_cur').select2({
       theme: 'bootstrap-5',
@@ -99,7 +110,16 @@
       theme: 'bootstrap-5',
       templateResult: formatOption,
       templateSelection: formatOption
-  });
+    });
+
+    $('#exchange_icon').click(function() {
+      var from_cur = $('#from_cur').val();
+      var to_cur = $('#to_cur').val();
+  
+      $('#from_cur').val(to_cur).trigger('change');
+      $('#to_cur').val(from_cur).trigger('change');
+    });
+
   });
 </script>
 {% endblock %}

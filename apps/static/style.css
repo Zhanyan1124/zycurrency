@@ -119,3 +119,7 @@ a.sidebar-link:hover {
     content: "*";
     color: red;
 }
+
+.cursor-pointer {
+    cursor: pointer;
+}
