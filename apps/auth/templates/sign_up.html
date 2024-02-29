@@ -1,10 +1,5 @@
 {% extends "base.html" %} {% block title%} SignUp an Account in ZyCurrency {%
 endblock %} {% block body%}
-<style>
-  .blue-linear {
-    background: linear-gradient(to bottom, #007bff, #ffffff);
-  }
-</style>
 <div class="container-fluid blue-linear">
   <div class="d-flex min-vh-100 justify-content-center align-items-center">
     <div class="border w-50 rounded bg-white">
@@ -14,7 +9,7 @@ endblock %} {% block body%}
       <div class="mb-3 text-center">
         <h4>Sign Up Account</h4>
       </div>
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         {{ form.csrf_token }}
         <div class="form-group mb-3 col-10 mx-auto">
           <label for="email" class="form-label">Email Address <span class="required-field"></label>
@@ -38,6 +33,17 @@ endblock %} {% block body%}
           </div>
           {% if form.errors.get('email') %}
           <div class="text-danger small">{{ form.errors.get('email')[0] }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group mb-3 col-10 mx-auto">
+          <label for="profile_picture" class="form-label">Profile Picture</label>
+          <div id="preview_pic"> </div>
+          <input class="form-control" type="file"  name="profile_picture" onchange="previewImage(event)">
+          {% if form.errors.get('profile_picture') %}
+          <div class="text-danger small">
+            {{ form.errors.get('profile_picture')[0] }}
+          </div>
           {% endif %}
         </div>
 
@@ -68,7 +74,7 @@ endblock %} {% block body%}
           </div>
 
           <div class="form-group col-md-6">
-            <label for="last_name" class="form-label">Last Name  <span class="required-field"></label>
+            <label for="last_name" class="form-label">Last Name </label>
             <input
               type="text"
               class="form-control"
@@ -94,12 +100,38 @@ endblock %} {% block body%}
         
         <div class="form-group mb-3 col-10 mx-auto">
           <label for="nationality" class="form-label">Nationality</label> 
-          {{ form.nationality(class="form-select") }}
+          <select class="form-select" id="nationality" name="nationality">
+            <option value="" disabled selected>Select a country...</option>
+            {% for country in countries %}
+              {% if form.nationality.data and form.nationality.data.code == country.code%}
+              <option value="{{ country.code }}"  selected>
+                  {{ country.name }} ({{country.code}})
+              </option>
+              {% else %}
+              <option value="{{ country.code }}" >
+                  {{ country.name }} ({{country.code}})
+              </option>
+              {% endif %}
+            {% endfor %}
+        </select>
         </div>
 
         <div class="form-group mb-3 col-10 mx-auto">
           <label for="default_cur" class="form-label">Default Currency</label> 
-          {{ form.default_cur(class="form-select") }}
+          <select class="form-select" id="default_cur" name="default_cur">
+            <option value="" disabled selected>Select an currency...</option>
+            {% for currency in currencies %}
+              {% if form.default_cur.data and form.default_cur.data.code == currency.code%}
+              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" selected>
+                  {{ currency.code }} - {{ currency.name }}
+              </option>
+              {% else %}
+              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
+                  {{ currency.code }} - {{ currency.name }}
+              </option>
+              {% endif %}
+            {% endfor %}
+        </select>
         </div>
         
         <div class="form-group mb-3 col-10 mx-auto">
@@ -141,7 +173,7 @@ endblock %} {% block body%}
           {% endfor %} {% endif %} {% endwith %}
         </div>
         <div class="mb-3 mx-auto col-10">
-          <a href="{{ login_url }}" class="col-3"
+          <a href="/auth/login" class="col-3"
             >Have an Account? Proceed to Login</a
           >
         </div>
@@ -154,4 +186,44 @@ endblock %} {% block body%}
     </div>
   </div>
 </div>
+
+<script>
+  $(document).ready(function() {
+    function formatOption(option) {
+      if (!option.id) {
+          return option.text;
+      }
+
+      var imageUrl = $(option.element).data('image');
+      if (!imageUrl) {
+        return option.text;
+    }
+
+      return $('<span><img src="' + imageUrl + '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' + option.text + '</span>');
+    }
+
+    $('#default_cur').select2({
+      placeholder: "Select an currency...",
+      theme: 'bootstrap-5',
+      templateResult: formatOption,
+      templateSelection: formatOption,
+      width: '100%',
+    });
+
+    $('#nationality').select2({
+      placeholder: "Select a country...",
+      theme: 'bootstrap-5', 
+      width: '100%',       
+    });
+  });
+
+  function previewImage(event) {
+    var reader = new FileReader();
+    reader.onload = function () {
+        var output = document.getElementById('preview_pic');
+        output.innerHTML = '<img src="' + reader.result + '" class="border rounded-circle" style="width: 120px; height: 120px; margin-bottom:10px">';
+    };
+    reader.readAsDataURL(event.target.files[0]);
+  }
+</script>
 {% endblock %}

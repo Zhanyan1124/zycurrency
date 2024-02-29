@@ -1,16 +1,17 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from .forms import SignUpForm, LoginForm
+from .forms import SignUpForm, LoginForm, EditProfileForm, ChangePasswordForm
 from .models import User
-from .exceptions import EmailExistedException
+from .exceptions import EmailExistedException, InvalidPasswordException
 import os
 import requests
 import json
 from oauthlib.oauth2 import WebApplicationClient
 from flask_mail import Message
+from werkzeug.utils import secure_filename
 from apps import db,mail 
-
+from apps.models import Currency, Country
 
 
 auth_bp = Blueprint('auth', __name__, template_folder='templates')
@@ -30,7 +31,7 @@ def login():
             return redirect(url_for('views.home'))
         else:
             flash('Invalid email or password', 'danger')
-    return render_template('login.html', form=form, signup_url=url_for('auth.signup'), google_login_url=url_for('auth.google_login'))
+    return render_template('login.html', form=form)
 
 
 @auth_bp.route('/logout')
@@ -42,13 +43,30 @@ def logout():
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = SignUpForm()
+    currencies = Currency.query.all()
+    countries = Country.query.all()
     try:
         if request.method == 'POST' and form.validate_on_submit():
+
+
             existing_user = User.query.filter_by(email=form.email.data).first()
             if existing_user:
                 raise EmailExistedException('This email address is already registered.')
             
             hashed_password = generate_password_hash(form.password.data, method='scrypt')
+            
+            
+            if form.profile_picture.data:
+                profile_picture = form.profile_picture.data
+                filename = secure_filename(profile_picture.filename)
+                folder_path = os.path.join(current_app.root_path, 'static', 'user_pics')
+                file_path = os.path.join(folder_path, filename)
+                profile_picture.save(file_path)
+                picture_url = 'user_pics/' + filename
+      
+            else:
+                picture_url = None
+            
             if form.default_cur.data:
                 default_cur = form.default_cur.data.code
             else:
@@ -57,14 +75,20 @@ def signup():
                 nationality= form.nationality.data.code
             else:
                 nationality= None
-            new_user = User(email=form.email.data, password=hashed_password, first_name = form.first_name.data, last_name = form.last_name.data, default_cur = default_cur, nationality = nationality)
+
+            if form.last_name.data:
+                last_name = form.last_name.data
+            else:
+                last_name = None
+
+            new_user = User(email=form.email.data, password=hashed_password, first_name = form.first_name.data, last_name = last_name, default_cur = default_cur, nationality = nationality, picture_url=picture_url)
             db.session.add(new_user)
             db.session.commit()
-            msg = Message("Activate ur account on ZyCurrency", 
-                  sender=current_app.config["MAIL_USERNAME"], 
-                  recipients=["zhanyan1124@gmail.com"])
-            msg.body = "Body of the email"
-            mail.send(msg)
+            # msg = Message("Activate ur account on ZyCurrency", 
+            #       sender=current_app.config["MAIL_USERNAME"], 
+            #       recipients=["zhanyan1124@gmail.com"])
+            # msg.body = "Body of the email"
+            # mail.send(msg)
             flash('Sign up successful. You may proceed to log in.', 'success')
             return redirect(url_for('auth.login'))
         
@@ -77,9 +101,82 @@ def signup():
     except Exception as e:
         flash(f'Error during sign up: {str(e)}', 'danger')
 
-    return render_template('sign_up.html', form=form, login_url=url_for('auth.login'))
+    return render_template('sign_up.html', form=form, currencies=currencies, countries=countries)
 
+@auth_bp.route('/edit-profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm()
+    currencies = Currency.query.all()
+    countries = Country.query.all()
 
+    try:
+        if request.method == 'POST' and form.validate_on_submit():
+            
+            if form.default_cur.data:
+                default_cur = form.default_cur.data.code
+            else:
+                default_cur = None
+            if form.nationality.data:
+                nationality= form.nationality.data.code
+            else:
+                nationality= None
+            if form.last_name.data:
+                last_name = form.last_name.data
+            else:
+                last_name = None
+            
+            if form.profile_picture.data:
+                profile_picture = form.profile_picture.data
+                filename = secure_filename(profile_picture.filename)
+                folder_path = os.path.join(current_app.root_path, 'static', 'user_pics')
+                file_path = os.path.join(folder_path, filename)
+                profile_picture.save(file_path)
+                current_user.picture_url = 'user_pics/' + filename
+
+            current_user.first_name = form.first_name.data
+            current_user.last_name = last_name
+            current_user.nationality = nationality
+            current_user.default_cur = default_cur
+
+            db.session.commit()
+
+            flash('Edited profile successfully.', 'success')
+        
+        elif request.method == 'POST' and not form.validate_on_submit():
+            form.populate_obj(request.form)
+    
+    except Exception as e:
+        flash(f'Error when editing profile: {str(e)}', 'danger')
+
+    return render_template('edit_profile.html', form=form, current_user=current_user, currencies=currencies, countries=countries)
+
+@auth_bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+    try:
+        if request.method == 'POST' and form.validate_on_submit():
+            if(current_user.password):
+                if(form.old_password.data == None):
+                    raise InvalidPasswordException ('Old password is required for validation.')
+                if(check_password_hash(current_user.password, form.old_password.data) == False):
+                    raise InvalidPasswordException ('The old password does not match with existing password.')
+                if(check_password_hash(current_user.password, form.new_password.data)):
+                    raise InvalidPasswordException ('You are using an old password')
+            hashed_password = generate_password_hash(form.new_password.data, method='scrypt')
+            current_user.password = hashed_password
+            db.session.commit()
+
+            flash('Changed password successfully.', 'success')
+
+    except InvalidPasswordException as e:
+        flash(str(e), 'danger')
+    
+    except Exception as e:
+        flash(f'Error when editing profile: {str(e)}', 'danger')
+            
+    return render_template('change_password.html', form=form)
 
 @auth_bp.route('/google_login')
 def google_login():
@@ -159,3 +256,6 @@ def get_google_credentials():
         google_url = current_app.config["GOOGLE_DISCOVERY_URL"]
 
         return (client_id, client_secret, google_url)
+
+
+

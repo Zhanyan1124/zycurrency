@@ -1,12 +1,6 @@
 {% extends "base.html" %} 
 {% block title%} Login to ZyCurrency {% endblock %}
 {% block body%}
-<style>
-  .blue-linear {
-    background: linear-gradient(to bottom, #007bff, #ffffff);
-  }
-</style>
-
 <div class="container-fluid blue-linear">
   <div class="d-flex min-vh-100 justify-content-center align-items-center">
     <div class="border w-50 rounded bg-white">
@@ -62,7 +56,7 @@
 
         <div class="row mb-3 mx-auto col-10">
           <div class="col-6">
-            <a href="{{ signup_url }}">No Account? Proceed to Sign Up</a>
+            <a href="/auth/signup">No Account? Proceed to Sign Up</a>
           </div>
           <div class="col-6 text-end">
             <a href="#simple-list-item-3">Forget Password</a>
@@ -80,7 +74,7 @@
 
         <div class="d-grid mb-3 col-4 mx-auto">
           <a
-            href="{{ google_login_url }}"
+            href="/auth/google_login"
             class="btn rounded d-flex align-items-center justify-content-center"
             style="background-color: white; border: 1px solid black"
           >

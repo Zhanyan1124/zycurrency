@@ -1,0 +1,168 @@
+{% extends 'sidebar.html' %} {% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-center align-items-center">
+    <div class="border w-50 rounded bg-white">
+      <div class="m-3 text-center">
+        <h3>Edit Your Profile</h3><br>
+        {% if current_user.picture_url %}
+            {% if current_user.picture_url.startswith('user_pics') %}
+            <img src="{{ url_for('static', filename=current_user.picture_url) }} " alt="{{ current_user.first_name }} {{ current_user.last_name }}" class="border rounded-circle" style="width: 90px; height: 90px">
+            {% else %}
+            <img src="{{ current_user.picture_url }}" alt="{{ current_user.first_name }} {{ current_user.last_name }}" class="border rounded-circle" style="width: 90px; height: 90px">
+            {% endif %}
+        {% else %}
+        <i class="fa-solid fa-user fa-2xl align-self-center border rounded-circle mx-10" style="padding-top: 40px; width: 90px; height: 90px; color: #fffafa; background-color: #787878"></i>
+        {% endif %}
+    </div>
+      <form method="POST" enctype="multipart/form-data">
+        {{ form.csrf_token }}
+        <div class="form-group mb-3 col-10 mx-auto">
+            <label for="profile_picture" class="form-label">
+                {% if current_user.picture_url %} Change Profile Picture
+                {% else %} Upload Profile Picture
+                {% endif %}
+            </label>
+            <input class="form-control" type="file"  name="profile_picture">
+            {% if form.errors.get('profile_picture') %}
+            <div class="text-danger small">
+              {{ form.errors.get('profile_picture')[0] }}
+            </div>
+            {% endif %}
+          </div>
+
+        <div class="row col-10 mb-3 mx-auto">
+          <div class="form-group col-md-6 ps-0">
+            <label for="first_name" class="form-label">First Name  <span class="required-field"></label>
+            <input
+              type="text"
+              class="form-control"
+              id="first_name"
+              name="first_name"
+              placeholder="first name"
+              {% if form.first_name.data %}
+                value="{{ form.first_name.data }}"
+              {% else %}
+                value="{{ current_user.first_name }}"
+              {% endif %}
+            />
+            {% if form.errors.get('first_name') %}
+            <div class="text-danger small">
+              {{ form.errors.get('first_name')[0] }}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-6">
+            <label for="last_name" class="form-label">Last Name </label>
+            <input
+              type="text"
+              class="form-control"
+              id="last_name"
+              name="last_name"
+              placeholder="last name"
+              {% if form.last_name.data %}
+                value="{{ form.last_name.data }}"
+              {% elif current_user.last_name %}
+                value="{{ current_user.last_name }}"
+              {% endif %}
+            />
+            {% if form.errors.get('last_name') %}
+            <div class="text-danger small">
+              {{ form.errors.get('last_name')[0] }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="form-group mb-3 col-10 mx-auto">
+          <label for="nationality" class="form-label">Nationality</label> 
+          <select class="form-select" id="nationality" name="nationality">
+            <option value="" disabled selected>Select a country...</option>
+            {% for country in countries %}
+                {% if current_user.nationality == country.code%}
+                <option value="{{ country.code }}"  selected>
+                    {{ country.name }} ({{country.code}})
+                </option>
+                {% else %}
+                <option value="{{ country.code }}" >
+                    {{ country.name }} ({{country.code}})
+                </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        </div>
+
+        <div class="form-group mb-3 col-10 mx-auto">
+            <label for="default_cur" class="form-label">Default Currency</label> 
+            <select class="form-select" id="default_cur" name="default_cur">
+                <option value="" disabled selected>Select an currency...</option>
+                {% for currency in currencies %}
+                    {% if current_user.default_cur == currency.code%}
+                    <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" selected>
+                        {{ currency.code }} - {{ currency.name }}
+                    </option>
+                    {% else %}
+                    <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
+                        {{ currency.code }} - {{ currency.name }}
+                    </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="mb-3 col-10 mx-auto">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %} {% endif %} {% endwith %}
+        </div>
+
+        <div class="d-flex justify-content-center mb-3">
+            <div>
+              <button type="submit" class="btn btn-primary rounded-pill">
+                Save Changes
+              </button>
+            </div>
+            <div class="ms-4">
+              <a href="/" class="btn btn-secondary rounded-pill">
+                Back
+              </a>
+            </div>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+      function formatOption(option) {
+        if (!option.id) {
+            return option.text;
+        }
+  
+        var imageUrl = $(option.element).data('image');
+        if (!imageUrl) {
+          return option.text;
+      }
+  
+        return $('<span><img src="' + imageUrl + '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' + option.text + '</span>');
+      }
+  
+      $('#default_cur').select2({
+        placeholder: "Select an currency...",
+        theme: 'bootstrap-5',
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        width: '100%',
+        
+      });
+
+      $('#nationality').select2({
+        placeholder: "Select a country...",
+        theme: 'bootstrap-5',
+        width: '100%',        
+      });
+    });
+</script>
+{% endblock %}

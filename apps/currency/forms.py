@@ -5,15 +5,13 @@ from apps.models import Currency
 
 from wtforms.validators import DataRequired
 
-def currency_label(currency):
-    return currency.code + ' - ' + currency.name
 
 class ConvertForm(FlaskForm):
     amount = DecimalField('Amount',  [validators.DataRequired()])
     from_cur= QuerySelectField(query_factory=lambda: Currency.query.all(),
-                                allow_blank=False, get_label=currency_label)  
+                                allow_blank=False)  
     to_cur= QuerySelectField(query_factory=lambda: Currency.query.all(),
-                                allow_blank=False, get_label=currency_label) 
+                                allow_blank=False) 
     submit = SubmitField('Convert')
 
 def get_duration_choices():
@@ -21,9 +19,9 @@ def get_duration_choices():
 
 class HistoricalRateChangesForm(FlaskForm):
     from_cur= QuerySelectField(query_factory=lambda: Currency.query.all(),
-                                allow_blank=False, get_label=currency_label)  
+                                allow_blank=False)  
     to_cur= QuerySelectField(query_factory=lambda: Currency.query.all(),
-                                allow_blank=False, get_label=currency_label) 
+                                allow_blank=False) 
     duration = SelectField('Duration', choices=get_duration_choices())
     submit = SubmitField('View')
 

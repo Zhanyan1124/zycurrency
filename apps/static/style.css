@@ -27,6 +27,10 @@ body {
     background-color: #fafbfe;
 }
 
+.blue-linear {
+    background: linear-gradient(to bottom, #007bff, #ffffff);
+}
+
 #sidebar {
     width: 70px;
     min-width: 70px;
@@ -123,3 +127,34 @@ a.sidebar-link:hover {
 .cursor-pointer {
     cursor: pointer;
 }
+
+#profile-modal {
+    position: fixed;
+    top: 5%;
+    left: 80%;
+    width: 50%; 
+    max-width: 300px; 
+}
+
+a.profile-link{
+    padding: .3rem 1.625rem;
+    font-size: 1.0rem;
+    width:100%;
+    color: black;
+}
+
+a.profile-link i{
+    padding-right: .8rem;
+
+}
+
+a.profile-link:hover{
+    font-weight:bold;
+    font-size:1.05rem;
+}
+
+
+
+
+
+

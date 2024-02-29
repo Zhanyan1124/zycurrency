@@ -66,7 +66,7 @@
             {% endif %}
           </span>
         </div>
-        <button class="btn btn-primary square col-2 btn-sm"> <i class="fa-solid fa-bell" style="color: #ffffff;margin-right:15px"></i>   Set Alert </button>
+        <button class="btn btn-primary square col-2 btn-sm"> <i class="fa-solid fa-bell" style="color: #ffffff;margin-right:15px"></i> Set Alert </button>
       </div>
       <canvas id="exchangeChart" width="400" height="200"></canvas>
       {% endif%}
@@ -94,13 +94,15 @@
     $('#from_cur').select2({
       theme: 'bootstrap-5',
       templateResult: formatOption,
-      templateSelection: formatOption
+      templateSelection: formatOption,
+      width: '100%',
     });
 
     $('#to_cur').select2({
       theme: 'bootstrap-5',
       templateResult: formatOption,
-      templateSelection: formatOption
+      templateSelection: formatOption,
+      width: '100%',
     });
 
     $('#exchange_icon').click(function() {
