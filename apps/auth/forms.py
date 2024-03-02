@@ -66,3 +66,23 @@ class ChangePasswordForm(FlaskForm):
         validators.DataRequired(),
         validators.EqualTo('new_password', message='Passwords must match')
     ])
+
+class ForgetPasswordForm(FlaskForm):
+    email = StringField('Email', [
+        validators.DataRequired(),
+        validators.Email(message='Invalid email address')
+    ])
+
+class ResetPasswordForm(FlaskForm):
+    email = StringField('Email', [
+        validators.DataRequired(),
+        validators.Email(message='Invalid email address')
+    ])
+    password = PasswordField(' Password', [
+        validators.DataRequired(),
+        validators.EqualTo('confirm_password', message='Passwords must match')
+    ])
+    confirm_password = PasswordField('Confirm Password', [
+        validators.DataRequired(),
+        validators.EqualTo('password', message='Passwords must match')
+    ])

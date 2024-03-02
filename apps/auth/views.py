@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, abort
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from .forms import SignUpForm, LoginForm, EditProfileForm, ChangePasswordForm
+from .forms import SignUpForm, LoginForm, EditProfileForm, ChangePasswordForm, ForgetPasswordForm, ResetPasswordForm
 from .models import User
 from .exceptions import EmailExistedException, InvalidPasswordException
 import os
@@ -12,6 +12,7 @@ from flask_mail import Message
 from werkzeug.utils import secure_filename
 from apps import db,mail 
 from apps.models import Currency, Country
+from .tasks import send_reset_password_mail
 
 
 auth_bp = Blueprint('auth', __name__, template_folder='templates')
@@ -89,6 +90,7 @@ def signup():
             #       recipients=["zhanyan1124@gmail.com"])
             # msg.body = "Body of the email"
             # mail.send(msg)
+            
             flash('Sign up successful. You may proceed to log in.', 'success')
             return redirect(url_for('auth.login'))
         
@@ -102,6 +104,53 @@ def signup():
         flash(f'Error during sign up: {str(e)}', 'danger')
 
     return render_template('sign_up.html', form=form, currencies=currencies, countries=countries)
+
+@auth_bp.route('/forget-password', methods=['GET', 'POST'])
+def forget_password():
+    form = ForgetPasswordForm()
+    try:
+        if request.method == 'POST' and form.validate_on_submit():
+            form.populate_obj(request.form)
+            email = form.email.data
+            serializer = current_app.config['SERIALIZER']
+            token = serializer.dumps(email, salt='reset-password')
+            reset_password_url = current_app.config['URL_DOMAIN_WITH_PROTOCOL'] + url_for('auth.reset_password', token=token, external=True)
+            print(reset_password_url)
+            html_template = render_template('mails/reset_password_mail.html', reset_password_url=reset_password_url)
+            send_reset_password_mail.delay(email, html_template)
+            flash('Please check your email inbox to reset your password.', 'success')
+
+    except Exception as e:
+        flash(f'Error when sending reset password email: {str(e)}', 'danger')
+
+    return render_template('forget_password.html', form=form)
+
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    form = ResetPasswordForm()
+    serializer = current_app.config['SERIALIZER']
+    try:
+        email = serializer.loads(token, salt='reset-password', max_age=1800)
+    except Exception as e:
+        abort(404)
+    
+    form.email.data = email
+    try:
+        if request.method == 'POST' and form.validate_on_submit():
+            user = User.query.filter_by(email=form.email.data).first()
+            if(check_password_hash(user.password, form.password.data)):
+                raise InvalidPasswordException ('You are using an old password')
+            hashed_password = generate_password_hash(form.password.data, method='scrypt')
+            user.password = hashed_password
+            db.session.commit()
+            flash('Password has been reset. You may proceed to login now.', 'success')
+    except InvalidPasswordException as e:
+        flash(str(e), 'danger')
+    except Exception as e:
+        flash(f'Error when changing password: {str(e)}', 'danger')
+    return render_template('reset_password.html', form=form, email=email)
+
 
 @auth_bp.route('/edit-profile', methods=['GET', 'POST'])
 @login_required
@@ -174,9 +223,11 @@ def change_password():
         flash(str(e), 'danger')
     
     except Exception as e:
-        flash(f'Error when editing profile: {str(e)}', 'danger')
+        flash(f'Error when changing password: {str(e)}', 'danger')
             
     return render_template('change_password.html', form=form)
+
+
 
 @auth_bp.route('/google_login')
 def google_login():
