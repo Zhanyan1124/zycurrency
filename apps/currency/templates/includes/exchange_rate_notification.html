@@ -1,0 +1,121 @@
+<div class="modal fade notification-modal" id="notification-modal" tabindex="-1" role="dialog" aria-labelledby="notification-modal" aria-hidden="true" data-backdrop="true">
+    <div class="modal-dialog modal-dialog-centered model-sm" role="document">
+      <div class="modal-content">
+        <form method="POST">
+          {{ notification_form.csrf_token }}
+          <input name='from_cur' type='hidden' id='from_cur_input'> </input>
+          <input name='to_cur' type='hidden' id='to_cur_input'> </input>
+          <div class="modal-header">
+            <div class='row justify-content-between align-items-center w-100' style="height: 40px">
+              <div class="col-6 text-center">
+                <input type="radio" id="periodically" value='periodically' name="alert_type" class="radio-input" checked>
+                <label for="periodically" class="radio-label">Periodically</label>
+              </div>
+              <div class="col-6 text-center">
+                <input type="radio" id="conditionally" value='conditionally' name="alert_type" class="radio-input">
+                <label for="conditionally" class="radio-label">Conditionally</label>
+              </div>
+            </div>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex flex-column justify-content-center align-items-start" id='notification_setting'>
+              <div class='row w-100 align-items-center justify-content-center' id='period_options'>
+                <label for="period" class="col-2 form-label fw-bold">Period:</label>
+                <div class="col-8"> 
+                    <select id="period" name="period" class="form-select-sm">
+                        <option value='day'>Each Day</option>
+                        <option value='week'>Each Week</option>
+                        <option value='month'>Each Month</option>
+                    </select>
+                </div>
+                <div class='text-center w-100 mb-4'>
+                  <span style="font-size:0.8rem;">* The alert will be sent on 8am to inform on the latest currency rate</span>
+                </div>
+              </div>
+
+
+              <div id='condition_options'>
+                <div class='text-start mx-2'>
+                  <span class='fw-bold'>Condition </span>
+                </div>
+                <div class='row w-100 align-items-center justify-content-center mb-3'>
+                  <label for="condition" class="form-label col-4" id='condition_label'></label>
+                  <div class="col-5"> 
+                      <select id="condition" name="condition" class="form-select-sm">
+                          <option value='more'>More Than (>)</option>
+                          <option value='less'>Less Than (<)</option>
+                      </select>
+                  </div>
+                  <div class="col-3"> 
+                    <input type="text" class="form-control form-control-sm" id="rate" name='rate' placeholder="Rate">
+                  </div>
+                </div>
+              </div>
+              <div class='row w-100 align-items-center justify-content-center mb-3' >
+                <label for="method" class="col-3">Notify Via:</label>
+                <div class="form-check-inline col-3">
+                  <input class="form-check-input" type="checkbox" id="in_app" name="notify_in_app" checked>
+                  <label class="form-check-label" for="in_app">
+                    In-App
+                  </label>
+                </div>
+                <div class="form-check-inline col-3">
+                  <input class="form-check-input" type="checkbox" id="email" name="notify_email" checked>
+                  <label class="form-check-label" for="email">
+                    Email
+                  </label>
+                </div>
+              </div>
+              <div class='row w-100 align-items-start justify-content-center'>
+                <label for="notes" class="col-2 form-label">Notes:</label>
+                <div class="col-9"> 
+                  <textarea class="form-control form-control-sm" id="notes" name="notes" rows="5" placeholder="Type something here..."></textarea>
+                </div>
+              </div>
+              <div class='text-center w-100 mb-3'>
+                <span style="font-size:0.8rem;">* The notes will be sent together with the alert</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer d-flex justify-content-center">
+            <button type="submit" value="notification_form" name="submit_notification" class="btn btn-sm btn-primary mx-2 px-4">Set</button>
+            <button type="button" class="btn btn-sm btn-secondary mx-2 px-3" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    $("#condition_options").hide();
+
+    var from_cur = $('#from_cur').val();
+    var to_cur = $('#to_cur').val();
+    $("#condition_label").text("Exchange Rate (" + from_cur + '/' + to_cur + '): ');
+    $('#from_cur_input').val(from_cur);
+    $('#to_cur_input').val(to_cur);
+    
+    $("input[name='alert_type']").change(function(){
+      if ($("#periodically").is(":checked")) {
+        $("#period_options").show();
+        $("#condition_options").hide();
+      } else {
+        $("#period_options").hide();
+        $("#condition_options").show();
+      }
+    });
+  
+    $("#from_cur, #to_cur").change(function(){
+      var from_cur = $('#from_cur').val();
+      var to_cur = $('#to_cur').val();
+      $("#condition_label").text("Exchange Rate (" + from_cur + '/' + to_cur + '): ');
+      $('#from_cur_input').val(from_cur);
+      $('#to_cur_input').val(to_cur);
+    });
+    
+
+  })
+</script>

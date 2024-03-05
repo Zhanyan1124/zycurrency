@@ -154,6 +154,27 @@ a.profile-link:hover{
 }
 
 
+.radio-input {
+    display: none;
+  }
+
+.radio-label {
+    cursor: pointer;
+    padding: 10px 20px;
+    margin: 0 5px;
+}
+
+.radio-label:hover{
+    font-weight:bold;
+    font-size:1.05rem;
+    cursor:pointer
+}
+  
+.radio-input:checked + .radio-label {
+    font-weight:bold;
+    font-size:1.05rem;
+    cursor: auto;
+}
 
 
 

@@ -42,9 +42,12 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix='/auth')
     from apps.currency.views import currency_bp
     app.register_blueprint(currency_bp, url_prefix='/currency')
+    from apps.notification.views import notification_bp
+    app.register_blueprint(notification_bp, url_prefix='/notifications')
     
     from apps.auth.models import User
-    from apps.models import Country
+    from apps.models import Country, Currency
+    from apps.notification.models import Notification
     with app.app_context():
         db.create_all()
         print('Connected to Database')
