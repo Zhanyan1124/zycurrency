@@ -23,13 +23,13 @@
         </a>
       </li>
       <li class="sidebar-item">
-        <a href="/currency/historical" class="sidebar-link">
+        <a href="/currency/historical-exrate" class="sidebar-link">
           <i class="fas fa-chart-line"></i>
           <span>Exchange Rate Changes</span>
         </a>
       </li>
       <li class="sidebar-item">
-        <a href="/" class="sidebar-link">
+        <a href="/currency/historical-rsi" class="sidebar-link">
           <i class="fas fa-chart-line"></i>
           <span>RSI Value Changes</span>
         </a>
@@ -80,7 +80,7 @@
                 <img src="{{ current_user.picture_url }}" alt="{{ current_user.first_name }} {{ current_user.last_name }}" class="border rounded-circle" style="width: 30px; height:30px;margin-right:10px">
                 {% endif %}
             {% else %}
-            <i class="fa-solid fa-user align-self-center border rounded-circle mx-10" style="margin-right:10px; color: #fffafa; background-color: #787878"></i>
+            <i class="fa-solid fa-user align-self-center border rounded-circle mx-10" style="margin-right:10px; padding: 7px; color: #fffafa; background-color: #787878"></i>
             {% endif %}
 
             {{current_user.first_name}} 

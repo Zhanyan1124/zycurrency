@@ -1,16 +1,16 @@
 {% extends 'sidebar.html' %} {% block content %}
 <div class="container-fluid">
   <h3 class="text-center" style="margin-bottom: 25px">
-    Historical Exchange Rate Changes
+    Historical Relative Strength Index (RSI) Changes
   </h3>
   <div class="d-flex justify-content-center align-items-center">
     <div style="width: 70%">
       <form
         method="POST"
-        action="/currency/historical-exrate"
+        action="/currency/historical-rsi"
         id="get_historical_form"
       >
-        <input type="hidden" name="csrf_token" value="{{ csrf_exrate_token }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_rsi_token }}">
         <div
           class="row justify-content-between align-items-center"
           style="margin-bottom: 30px"
@@ -112,7 +112,7 @@
           </span>
         </div>
       </div>
-      <canvas id="exchangeChart" width="400" height="200"></canvas>
+      <canvas id="rsiChart" width="400" height="200"></canvas>
     </div>
   </div>
 </div>
@@ -181,7 +181,7 @@
       var formData = $(this).serialize();
 
       $.ajax({
-        url: "/currency/historical-exrate",
+        url: "/currency/historical-rsi",
         type: "POST",
         data: formData,
         success: function (response) {
@@ -199,37 +199,64 @@
             $("#changes_value").css("color", "red");
           }
 
-          var data = response.results;
-          var currency = Object.keys(data)[0];
-          var dates = Object.keys(data[currency]);
-          var exchangeRates = Object.values(data[currency]);
-
+          var rsi_values = response.rsi_values;
+          var dates = response.dates;
+          console.log(rsi_values);
+          console.log(dates);
           var dataset = {
-            label: from_cur + "/" + to_cur + " Exchange Rate",
-            data: exchangeRates,
+            label: from_cur + "/" + to_cur + " RSI Values",
+            data: rsi_values,
           };
 
-          var parent = $("#exchangeChart").parent();
-          $("#exchangeChart").remove();
-          var newCanvas = $("<canvas>").attr("id", "exchangeChart");
+          var parent = $("#rsiChart").parent();
+          $("#rsiChart").remove();
+          var newCanvas = $("<canvas>").attr("id", "rsiChart");
           parent.append(newCanvas);
 
-          var exchangeChart = new Chart(newCanvas, {
+          var rsiChart = new Chart(newCanvas, {
             type: "line",
             data: {
-              labels: dates,
-              datasets: [dataset],
+                labels: dates,
+                datasets: [dataset],
             },
             options: {
-              scales: {
-                yAxes: [
-                  {
-                    ticks: {
-                      beginAtZero: false,
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: false,
+                        },
+                    }],
+                },
+                plugins: {
+                  annotation: {
+                    annotations: {
+                      line1: {
+                        type: 'line',
+                        yMin: 70,
+                        yMax: 70,
+                        borderColor: 'rgb(255, 99, 132)',
+                        borderWidth: 2,
+                        label:{
+                          content: "Overbought",
+                          position: 'end',
+                          display: true
+                        }
+                      },
+                      line2: {
+                        type: 'line',
+                        yMin: 30,
+                        yMax: 30,
+                        borderColor: 'green',
+                        borderWidth: 2,
+                        label:{
+                          content: "Oversold",
+                          position: 'end',
+                          display: true
+                        }
+                      }
                     },
-                  },
-                ],
-              },
+                  }
+                }
             },
           });
         },
