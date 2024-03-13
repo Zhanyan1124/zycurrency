@@ -3,8 +3,8 @@
   <h3 class="text-center" style="margin-bottom: 25px">Currency Converter</h3>
   <div class="d-flex justify-content-center align-items-center">
     <div class="w-75-m w-50-l">
-      <form method="POST">
-        {{ form.csrf_token }}
+      <form method="POST" action="/currency/convert" id="convert_form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="form-group col-12 mx-auto" style="margin-bottom: 25px">
           <label for="amount" class="form-label">Amount </label>
           <input
@@ -12,21 +12,8 @@
             class="form-control"
             id="amount"
             name="amount"
-            {%
-            if
-            form.amount.data
-            %}
-            value="{{ form.amount.data }}"
-            {%
-            endif
-            %}
             required
           />
-          {% if form.errors.get('amount') %}
-          <div class="text-danger small">
-            {{ form.errors.get('amount')[0] }}
-          </div>
-          {% endif %}
         </div>
 
         <div class="form-group col-12 mx-auto" style="margin-bottom: 25px">
@@ -67,19 +54,13 @@
           </select>
         </div>
 
-        <div class="d-grid col-3 mx-auto mb-3" style="margin-bottom: 45px">
-          <button type="submit" class="btn btn-primary square">Convert</button>
+        <div id="convert_result_section" style="display:none;">
+          <div class="text-center" id="exchange_rate">
+              Exchange Rate = <span style="font-weight:bold" id="exchange_rate_display">  </span>
+          </div>
+          <div class="text-center" style="font-weight:bold; font-size:20px" id="result">
+          </div>
         </div>
-        {% if exchange_rate %}
-        <div class="text-center" id="exchange_rate">
-            Exchange Rate = <span style="font-weight:bold"> {{exchange_rate}} </span>
-        </div>
-        {% endif %}
-        {% if form.amount.data and convert_result %}
-        <div class="text-center" style="font-weight:bold; font-size:20px" id="result">
-            {{form.amount.data}} {{form.from_cur.data.code}} = {{convert_result}} {{form.to_cur.data.code}}
-        </div>
-        {% endif %}
       </form>
     </div>
   </div>
@@ -122,6 +103,41 @@
       $('#to_cur').val(from_cur).trigger('change');
     });
 
+    $('#to_cur, #from_cur, #amount').change(function() {
+      var fromCurValue = $('#from_cur').val();
+      var toCurValue = $('#to_cur').val();
+      var amountValue = $('#amount').val();
+      if (fromCurValue != "" && toCurValue!="" && amountValue != "")
+        $('#convert_form').submit();
+    });
+
+    $("#convert_form").submit(function (event) {
+      event.preventDefault();
+
+      var formData = $(this).serialize();
+
+      $.ajax({
+        url: "/currency/convert",
+        type: "POST",
+        data: formData,
+        success: function (response) {
+          console.log(response);
+          var exchange_rate = response.exchange_rate;
+          var convert_result = response.convert_result;
+          $("#convert_result_section").show();
+          var from_cur = $("#from_cur").val();
+          var to_cur = $("#to_cur").val();
+          var amount = $("#amount").val();
+
+          $("#exchange_rate_display").text(exchange_rate);
+          $("#result").text(amount + ' ' +  from_cur + ' = ' + convert_result + ' ' + to_cur);
+
+        },
+        error: function (xhr, status, error) {
+          console.error(xhr.responseText);
+        },
+      });
+    });
   });
 </script>
 {% endblock %}

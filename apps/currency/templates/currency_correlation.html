@@ -1,0 +1,240 @@
+{% extends 'sidebar.html' %} {% block content %}
+<div class="container-fluid">
+    <h3 class="text-center" style="margin-bottom: 25px">
+        Currency Correlation Analysis
+    </h3>
+    <div class="d-flex justify-content-center align-items-center">
+        <div style="width: 80%">
+        <form
+            method="POST"
+            action="/currency/correlation-analysis"
+            id="get_correlation_form"
+        >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="d-flex flex-column justify-content-start align-items-start" style="margin-bottom: 30px">
+
+            <span class="mb-2">Select Multiple Currencies: </span>
+            <div class="container p-0">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4 align-items-center" id='currencies_input_section'>
+                    {% for cur in input_curs%}
+                    <div class="form-group col">
+                        <select class="form-select cur_input">
+                            {% for currency in currencies %}
+                                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                                    {% if cur == currency.code %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ currency.code }} - {{ currency.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endfor %}
+                    {% if input_curs|length < 3%}
+                    <div class="form-group col">
+                        <select class="form-select cur_input">
+                            <option value="" disabled selected>Select Currency ...</option>
+                            <option 
+                            {% for currency in currencies %}
+                                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
+                                    {{ currency.code }} - {{ currency.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="btn btn-primary rounded-pill px-3 py-1" style="margin-bottom: 25px;font-size:0.9rem;" id="add_button"><i class="fa-solid fa-plus mr-2"></i> Add</div>
+            <div class="mx-auto col-3">
+                <div class="form-group d-flex align-items-center" style="margin-bottom: 15px">
+                    <label for="duration" class="form-label me-3">Duration:  </label>
+                    <select id="duration" name="duration" class="form-select">
+                        <option value="" disabled selected>Select Duration</option>
+                        <option value="1d">One Day</option>
+                        <option value="7d">One Week</option>
+                        <option value="14d">Two Weeks</option>
+                        <option value="1m">One Month</option>
+                        <option value="3m">Three Months</option>
+                        <option value="6m">Six Months</option>
+                        <option value="1y">One Year</option>
+                        <option value="2y">Two Years</option>
+                        <option value="1h" disabled>Last Hour (Not Supported)</option>
+                    </select>
+                </div>
+            </div>
+            <div class='mx-auto'>
+                <div id="heatMapChart"></canvas>
+            </div>
+
+        </form>
+
+
+
+    </div>
+</div>
+
+<script>
+$(document).ready(function () {
+    function formatOption(option) {
+        if (!option.id) {
+            return option.text;
+        }
+
+        var imageUrl = $(option.element).data("image");
+        if (!imageUrl) {
+            return option.text;
+        }
+
+        return $(
+        '<span><img src="' +
+            imageUrl +
+            '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' +
+            option.text +
+            "</span>"
+        );
+    }
+
+
+    $(".cur_input").select2({
+        placeholder: 'Select Currency...',
+        theme: "bootstrap-5",
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        width: "100%",
+    });
+    
+    $('#duration').select2({
+        placeholder: 'Select Duration',
+        theme: "bootstrap-5",
+        minimumResultsForSearch: Infinity,
+        width: "100%"
+    })
+
+    $(document).on('change', '.cur_input, #duration', function() {
+        var curValues = $('.cur_input').map(function() {
+            return $(this).val();
+        }).get();
+        var durationValue = $('#duration').val();
+        if (curValues.length>1 && durationValue != null)
+            $('#get_correlation_form').submit();
+    });
+
+    $('#add_button').click(function(){
+        var $newCurDiv = $('<div>').addClass('form-group col');
+        var $layoutDiv = $('<div>').addClass('d-flex align-items-center');
+
+        var $select = $('<select>').addClass('form-select cur_input');
+        var $defaultOption = $('<option>').attr('value', '').attr('disabled', 'disabled').attr('selected', 'selected').text('Select Currency ...');
+
+        $select.append($defaultOption);
+            
+        {% for currency in currencies %}
+        var $option = $('<option>')
+                        .attr('value', '{{ currency.code }}')
+                        .attr('data-image', '{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}')
+                        .text('{{ currency.code }} - {{ currency.name }}');
+        $select.append($option);
+        {% endfor %}    
+        
+        var $removeIcon = $('<i>').addClass('fa-solid fa-minus clickable-icon').attr('style','color:#ff0000;margin-left:5px')
+
+        $layoutDiv.append($select);
+        $layoutDiv.append($removeIcon);
+
+        $newCurDiv.append($layoutDiv);
+
+        $('#currencies_input_section').append($newCurDiv);
+        $('.cur_input').select2({
+            placeholder: 'Select currency...',
+            theme: "bootstrap-5",
+            templateResult: formatOption,
+            templateSelection: formatOption,
+            width: "100%",
+        });
+    });
+
+    $(document).on('click', '.fa-minus', function() {
+        $(this).closest('.form-group').remove();
+    });
+
+
+    $("#get_correlation_form").submit(function (event) {
+        event.preventDefault();
+
+        var curValues = $('.cur_input').map(function() {
+            return $(this).val();
+        }).get();
+        var duration = $('#duration').val();
+
+
+        $.ajax({
+            url: "/currency/correlation-analysis",
+            type: "POST",
+            contentType: 'application/json',
+            data: JSON.stringify({
+                input_curs: curValues,
+                duration : duration
+            }),
+            success: function (response) {
+                console.log(response)
+                var options = {
+                    chart: {
+                        height: 450,
+                        width:800,
+                        type: "heatmap",
+                    },
+                    series: response,
+                    tooltip: {
+                        custom: function({series, seriesIndex, dataPointIndex, w}) {
+                            return '<div class="custom-tooltip">' + 
+                                '<span class="tooltip-label">' + w.globals.seriesNames[seriesIndex] + '/'  + w.globals.labels[dataPointIndex] + '</span>' + ' : ' +
+                                '<span class="tooltip-value">' +  series[seriesIndex][dataPointIndex] +'%' +  '</span>'
+                                '</div>';
+                        },
+                    },
+                    plotOptions: {
+                        heatmap: {
+                            colorScale: {
+                                ranges: [{
+                                    from: -30,
+                                    to: 0,
+                                    color: '#c90202',
+                                    name: 'Negative Changes',
+                                },
+                                {
+                                    from: 0,
+                                    to: 0.0001,
+                                    color: '#767676',
+                                    name: 'No Changes',
+                                },
+                                {
+                                    from: 0.0001,
+                                    to: 30,
+                                    color: '#018529',
+                                    name: 'Postive Changes',
+                                }
+                                ]
+                            },
+
+                            reverseNegativeShade: true,
+                        }
+                    }
+                }
+                var parent = $("#heatMapChart").parent();
+                $("#heatMapChart").remove();
+                var ctx = $("<div>").attr("id", "heatMapChart");
+                parent.append(ctx);  
+                var chart = new ApexCharts(document.querySelector("#heatMapChart"), options);
+                chart.render();
+            },
+            error: function (xhr, status, error) {
+                console.error(xhr.responseText);
+            },
+        });
+    });
+});
+</script>
+{% endblock %}

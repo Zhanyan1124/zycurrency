@@ -57,7 +57,7 @@ class CurrencySeeder(Seeder):
       "EUR": {"name": "Euro", "alpha_2_code": "EU"},
       "FJD": {"name": "Fijian Dollar", "alpha_2_code": "FJ"},
       "FKP": {"name": "Falkland Islands Pound", "alpha_2_code": "FK"},
-      "GBP": {"name": "British Pound Sterling", "alpha_2_code": "GB"},
+      "GBP": {"name": "British Pound Sterling", "alpha_2_code": "UK"},
       "GEL": {"name": "Georgian Lari", "alpha_2_code": "GE"},
       "GHS": {"name": "Ghanaian Cedi", "alpha_2_code": "GH"},
       "GIP": {"name": "Gibraltar Pound", "alpha_2_code": "GI"},

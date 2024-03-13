@@ -1,0 +1,290 @@
+{% extends 'sidebar.html' %} {% block content %}
+<div class="container-fluid">
+    <h3 class="text-center" style="margin-bottom: 25px">
+        Comparison on Currencies Changes
+    </h3>
+    <div class="d-flex justify-content-center align-items-center">
+        <div style="width: 80%">
+        <form
+            method="POST"
+            action="/currency/comparison"
+            id="get_comparison_form"
+        >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div
+            class="d-flex flex-column justify-content-start align-items-start"
+            style="margin-bottom: 30px"
+            >
+            <div class="form-group col-4" style="margin-bottom: 25px">
+                <span>Select BASE Currency: </span><br>
+                <select class="form-select"  id="base_cur" name="base_cur">
+                {% for currency in currencies %} 
+                {% if base_cur and base_cur==currency.code%}
+                <option
+                    value="{{ currency.code }}"
+                    data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                    selected
+                >
+                    {{ currency.code }} - {{ currency.name }}
+                </option>
+                {% else %}
+                <option
+                    value="{{ currency.code }}"
+                    data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                >
+                    {{ currency.code }} - {{ currency.name }}
+                </option>
+                {% endif %} {% endfor %}
+                </select>
+            </div>
+
+            <span class="mb-2">Select COMPARING Currency: </span>
+            <div class="container p-0">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4 align-items-center" id='comparing_currencies_section'>
+                    <div class="form-group col">
+                        <select class="form-select compare_cur">
+                            {% for currency in currencies %}
+                                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                                    {% if compare_cur and compare_cur == currency.code %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ currency.code }} - {{ currency.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="btn btn-primary rounded-pill px-4 py-2" style="margin-bottom: 25px" id="add_button"><i class="fa-solid fa-plus mr-2"></i> Add</div>
+
+            <div class='d-flex w-100 justify-content-between  align-items-center'>
+                <div class='d-flex flex-column col-5'>            
+                    <div class="form-group col-6" style="margin-bottom: 15px">
+                        <label for="duration" class="form-label">Duration </label>
+                        <select id="duration" name="duration" class="form-select">
+                            <option value="" disabled selected>Select Duration</option>
+                            <option value="1d">One Day</option>
+                            <option value="7d">One Week</option>
+                            <option value="14d">Two Weeks</option>
+                            <option value="1m">One Month</option>
+                            <option value="3m">Three Months</option>
+                            <option value="6m">Six Months</option>
+                            <option value="1y">One Year</option>
+                            <option value="2y">Two Years</option>
+                            <option value="1h" disabled>Last Hour (Not Supported)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group w-100" id="comparison_table" style="margin-bottom: 15px;display:none">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Currency</th>
+                                <th>Historical Rate</th>
+                                <th>Current Rate</th>
+                                <th>Changes</th>
+                            </tr>
+                            </thead>
+                            <tbody id="comparison_table_body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-6 h-100">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </form>
+
+
+
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+    function formatOption(option) {
+        if (!option.id) {
+            return option.text;
+        }
+
+        var imageUrl = $(option.element).data("image");
+        if (!imageUrl) {
+            return option.text;
+        }
+
+        return $(
+        '<span><img src="' +
+            imageUrl +
+            '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' +
+            option.text +
+            "</span>"
+        );
+    }
+
+    $("#base_cur").select2({
+        theme: "bootstrap-5",
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        width: "100%",
+    });
+
+    $(".compare_cur").select2({
+        placeholder: 'Select currency...',
+        theme: "bootstrap-5",
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        width: "100%",
+    });
+    
+    $('#duration').select2({
+        placeholder: 'Select duration...',
+        theme: "bootstrap-5",
+        minimumResultsForSearch: Infinity,
+        width: "100%"
+    })
+
+    $(document).on('change', '#base_cur, .compare_cur, #duration', function() {
+        var baseCurValue = $('#base_cur').val();
+        var compareCurValues = $('.compare_cur').map(function() {
+            return $(this).val();
+        }).get();
+        var durationValue = $('#duration').val();
+        if (baseCurValue != "" && compareCurValues.length>0 && durationValue != null)
+            $('#get_comparison_form').submit();
+    });
+
+    $('#add_button').click(function(){
+        var $newCompareCurDiv = $('<div>').addClass('form-group col');
+        var $layoutDiv = $('<div>').addClass('d-flex align-items-center');
+
+        var $select = $('<select>').addClass('form-select compare_cur').attr('name', 'compare_cur');
+        var $defaultOption = $('<option>').attr('value', '').attr('disabled', 'disabled').attr('selected', 'selected').text('Select Currency ...');
+
+        $select.append($defaultOption);
+            
+        {% for currency in currencies %}
+        var $option = $('<option>')
+                        .attr('value', '{{ currency.code }}')
+                        .attr('data-image', '{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}')
+                        .text('{{ currency.code }} - {{ currency.name }}');
+        $select.append($option);
+        {% endfor %} 
+        
+        var $removeIcon = $('<i>').addClass('fa-solid fa-minus clickable-icon').attr('style','color:#ff0000;margin-left:5px')
+
+        $layoutDiv.append($select);
+        $layoutDiv.append($removeIcon);
+
+        $newCompareCurDiv.append($layoutDiv);
+
+        $('#comparing_currencies_section').append($newCompareCurDiv);
+        $('.compare_cur').select2({
+            placeholder: 'Select currency...',
+            theme: "bootstrap-5",
+            templateResult: formatOption,
+            templateSelection: formatOption,
+            width: "100%",
+        });
+    });
+
+    $(document).on('click', '.fa-minus', function() {
+        $(this).closest('.form-group').remove();
+    });
+
+
+    $("#get_comparison_form").submit(function (event) {
+        event.preventDefault();
+
+        var baseCur = $('#base_cur').val();
+        var compareCurValues = $('.compare_cur').map(function() {
+            return $(this).val();
+        }).get();
+        var duration = $('#duration').val();
+
+
+        $.ajax({
+            url: "/currency/comparison",
+            type: "POST",
+            contentType: 'application/json',
+            data: JSON.stringify({
+                base_cur: baseCur,
+                compare_curs: compareCurValues,
+                duration : duration
+            }),
+            success: function (response) {
+                console.log(response)
+                $('#comparison_table').show();
+                $('#comparison_table_body').empty();
+                $.each(response, function(index, item) {
+                    var newRow = $('<tr>');
+                    var currency = $('<td>').text(baseCur + " / " + item.currency);
+                    var exchangeRate = $('<td>').text(item.exchange_rate.toFixed(4)).addClass('fw-bold text-center');
+                    var historicalRate = $('<td>').text(item.historical_rate.toFixed(4)).addClass('fw-bold text-center');
+                    if (item.changes>0)
+                        var changes = $('<td>').text('+' + item.changes.toFixed(3) + '%').addClass('fw-bold text-center').attr('style','color:green');
+                    else if(item.changes<0)
+                        var changes = $('<td>').text(item.changes.toFixed(3) + '%').addClass('fw-bold text-center').attr('style','color:red');
+                    else
+                        var changes = $('<td>').text(item.changes.toFixed(3) + '%').addClass('fw-bold text-center');
+            
+                    newRow.append(currency);
+                    newRow.append(historicalRate);
+                    newRow.append(exchangeRate);
+                    newRow.append(changes);
+            
+                    $('#comparison_table_body').append(newRow);
+                });
+                var currencies = response.map(item => item.currency);
+                var changes = response.map(item => item.changes);
+                const colors = [
+                    '#FF5733', '#33FF57', '#3357FF', '#5733FF', '#57FF33', '#FF3357',
+                    '#33FFFF', '#FFFF33', '#FF33FF', '#33FF33', '#3333FF', '#FF5733'
+                ];
+
+                const data = [];
+                const borderColor = [];
+                const backgroundColor = []
+                currencies.forEach((currency, index) => {
+                    const color = colors[index % colors.length];
+                    borderColor.push(color);
+                    backgroundColor.push(color);
+                    data.push(changes[index]);
+                    currencies[index] = baseCur + '/' + currency;
+                });
+
+                var parent = $("#barChart").parent();
+                $("#barChart").remove();
+                var ctx = $("<canvas>").attr("id", "barChart");
+                parent.append(ctx);
+                var barChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: currencies,
+                        datasets: [{
+                            data: data,
+                            borderColor: borderColor,
+                            backgroundColor: backgroundColor,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error(xhr.responseText);
+            },
+        });
+        });
+    });
+
+    
+</script>
+{% endblock %}

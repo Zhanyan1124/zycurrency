@@ -176,6 +176,12 @@ a.profile-link:hover{
     cursor: auto;
 }
 
+.clickable-icon:hover{
+    font-size:1.05rem;
+    cursor:pointer
+}
+
+
 
 
 
