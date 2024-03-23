@@ -13,9 +13,9 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_rsi_token }}">
         <div
           class="row justify-content-between align-items-center"
-          style="margin-bottom: 30px"
+          style="margin-bottom: 20px"
         >
-          <div class="form-group col-4 mx-auto" style="margin-bottom: 25px">
+          <div class="form-group col-4 mx-auto">
             <label for="from_cur" class="form-label">From Currency </label>
             <select class="form-select" id="from_cur" name="from_cur">
               {% for currency in currencies %} {% if from_cur and
@@ -45,7 +45,7 @@
             ></i>
           </div>
 
-          <div class="form-group col-4 mx-auto" style="margin-bottom: 30px">
+          <div class="form-group col-4 mx-auto">
             <label for="to_cur" class="form-label">To Currency </label>
             <select class="form-select" id="to_cur" name="to_cur">
               {% for currency in currencies %} {% if to_cur and
@@ -72,8 +72,7 @@
           <div class="form-group col-3" style="margin-bottom: 25px">
             <label for="duration" class="form-label">Duration </label>
             <select id="duration" name="duration" class="form-select">
-              <option value="" disabled selected>Select Duration</option>
-              <option value="7d">One Week</option>
+              <option value="7d" selected>One Week</option>
               <option value="14d">Two Weeks</option>
               <option value="1m">One Month</option>
               <option value="3m">Three Months</option>
@@ -112,14 +111,166 @@
           </span>
         </div>
       </div>
-      <canvas id="rsiChart" width="400" height="200"></canvas>
+      <div id="rsiChart"></div>
     </div>
   </div>
 </div>
 
+
 <script>
+  function fillRSIChanges(changes){
+    $("#changes_label").show();
+    var from_cur = $("#from_cur").val();
+    var to_cur = $("#to_cur").val();
+    $("#currencies").text(from_cur + "/" + to_cur);
+    if (changes > 0) {
+      $("#changes_value").text("+" + changes + "%");
+      $("#changes_value").css("color", "green");
+    } else {
+      $("#changes_value").text(changes + "%");
+      $("#changes_value").css("color", "red");
+    }
+  }
+
   $(document).ready(function () {
-    function formatOption(option) {
+    //Define chart customizations
+    var options = {
+      chart: {
+        height: 380,
+        width: "100%",
+        type: "line",
+        animations: {
+          initialAnimation: {
+            enabled: false
+          }
+        },
+        toolbar: {
+          show: true,
+          offsetX: 0,
+          offsetY: 0,
+          tools: {
+            download: true,
+            selection: false,
+            zoom: false,
+            zoomin: true,
+            zoomout: true,
+            pan: false, 
+            reset:false
+          },
+          export: {
+            csv: {
+              filename: undefined,
+              columnDelimiter: ',',
+              headerCategory: 'category',
+              headerValue: 'value',
+              dateFormatter(timestamp) {
+                return new Date(timestamp).toDateString()
+              }
+            },
+            svg: {
+              filename: undefined,
+            },
+            png: {
+              filename: undefined,
+            }
+          },
+          autoSelected: 'zoom' 
+        },
+      },
+      stroke: {
+        curve: 'smooth',
+      },
+      title: {
+        text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical RSI Values",
+        align: 'center',
+        margin: 10,
+        offsetX: 0,
+        offsetY: 0,
+        floating: false,
+        style: {
+          fontSize:  '18px',
+          fontWeight:  'bold',
+          color:  '#263238'
+        },
+      },
+      dataLabels: { 
+        enabled: false
+      },
+      noData: {
+        text: 'Requesting Data...'
+      },
+      series: [],
+      xaxis: {
+        type: "datetime"
+      },
+      annotations: {
+        yaxis: [
+          {
+            y: 70,
+            strokeDashArray: 1,
+            borderColor: 'black',
+            label: {
+              borderColor: 'black',
+              style: {
+                color: '#fff',
+                background: 'black'
+              },
+              text: 'Overbought'
+            }
+          },
+          {
+            y: 30,
+            strokeDashArray: 1,
+            borderColor: 'black',
+            label: {
+              borderColor: 'black',
+              style: {
+                color: '#fff',
+                background: 'black'
+              },
+              text: 'Oversold'
+            }
+          },
+        ]
+      }
+    };
+    var chart = new ApexCharts(document.querySelector("#rsiChart"), options);
+    chart.render();
+
+    //Send first ajax request when page initially load
+    var formData = $("#get_historical_form").serialize();
+    $.ajax({
+      url: "/currency/historical-rsi",
+      type: "POST",
+      data: formData,
+      success: function (response) {
+        console.log(response);
+        fillRSIChanges(response.changes)
+
+        var rsi_values = response.rsi_values;
+        var dates = response.dates;
+
+        var chart_data = rsi_values.map(function(value, index) {
+            return [dates[index], value.toFixed(1)];
+        });
+
+        chart.updateSeries([{
+          name: $("#from_cur").val() + " / " + $("#to_cur").val() + " RSI Value: ",
+          data: chart_data
+        }])
+        chart.updateOptions({
+          title: {
+            text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical RSI Values",
+          }
+        })
+      },
+      error: function (xhr, status, error) {
+        console.error(xhr.responseText);
+      },
+    });
+
+    //Customize currency selection field
+    function currencySelectionOption(option) {
       if (!option.id) {
         return option.text;
       }
@@ -138,27 +289,26 @@
       );
     }
 
+    //Use Select2 package to define the select inputs
     $("#from_cur").select2({
       theme: "bootstrap-5",
-      templateResult: formatOption,
-      templateSelection: formatOption,
+      templateResult: currencySelectionOption,
+      templateSelection: currencySelectionOption,
       width: "100%",
     });
-
     $("#to_cur").select2({
       theme: "bootstrap-5",
-      templateResult: formatOption,
-      templateSelection: formatOption,
+      templateResult: currencySelectionOption,
+      templateSelection: currencySelectionOption,
       width: "100%",
     });
-    
     $('#duration').select2({
-      placeholder: 'Select duration...',
       theme: "bootstrap-5",
       minimumResultsForSearch: Infinity,
       width: "100%"
     })
 
+    //Swap button
     $("#exchange_icon").click(function () {
       var from_cur = $("#from_cur").val();
       var to_cur = $("#to_cur").val();
@@ -167,14 +317,17 @@
       $("#to_cur").val(from_cur).trigger("change");
     });
 
+
+    //Submit the form when data changes
     $('#to_cur, #from_cur, #duration').change(function() {
       var fromCurValue = $('#from_cur').val();
       var toCurValue = $('#to_cur').val();
       var durationValue = $('#duration').val();
-      if (fromCurValue != "" && toCurValue!="" && durationValue != "")
+      if (fromCurValue != "" && toCurValue!="" && durationValue != "" && fromCurValue!=toCurValue)
         $('#get_historical_form').submit();
     });
 
+    //Send ajax request when form submitted to update chart
     $("#get_historical_form").submit(function (event) {
       event.preventDefault();
 
@@ -186,85 +339,31 @@
         data: formData,
         success: function (response) {
           console.log(response);
-          var changes = response.changes;
-          $("#changes_label").show();
-          var from_cur = $("#from_cur").val();
-          var to_cur = $("#to_cur").val();
-          $("#currencies").text(from_cur + "/" + to_cur);
-          if (changes > 0) {
-            $("#changes_value").text("+" + changes + "%");
-            $("#changes_value").css("color", "green");
-          } else {
-            $("#changes_value").text(changes + "%");
-            $("#changes_value").css("color", "red");
-          }
+          fillRSIChanges(response.changes)
 
           var rsi_values = response.rsi_values;
           var dates = response.dates;
-          console.log(rsi_values);
-          console.log(dates);
-          var dataset = {
-            label: from_cur + "/" + to_cur + " RSI Values",
-            data: rsi_values,
-          };
 
-          var parent = $("#rsiChart").parent();
-          $("#rsiChart").remove();
-          var newCanvas = $("<canvas>").attr("id", "rsiChart");
-          parent.append(newCanvas);
-
-          var rsiChart = new Chart(newCanvas, {
-            type: "line",
-            data: {
-                labels: dates,
-                datasets: [dataset],
-            },
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: false,
-                        },
-                    }],
-                },
-                plugins: {
-                  annotation: {
-                    annotations: {
-                      line1: {
-                        type: 'line',
-                        yMin: 70,
-                        yMax: 70,
-                        borderColor: 'rgb(255, 99, 132)',
-                        borderWidth: 2,
-                        label:{
-                          content: "Overbought",
-                          position: 'end',
-                          display: true
-                        }
-                      },
-                      line2: {
-                        type: 'line',
-                        yMin: 30,
-                        yMax: 30,
-                        borderColor: 'green',
-                        borderWidth: 2,
-                        label:{
-                          content: "Oversold",
-                          position: 'end',
-                          display: true
-                        }
-                      }
-                    },
-                  }
-                }
-            },
+          var chart_data = rsi_values.map(function(value, index) {
+              return [dates[index], value.toFixed(1)];
           });
+
+          chart.updateSeries([{
+            name: $("#from_cur").val() + " / " + $("#to_cur").val() + " RSI Value: ",
+            data: chart_data
+          }])
+          chart.updateOptions({
+            title: {
+              text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical RSI Values",
+            }
+          })
         },
         error: function (xhr, status, error) {
           console.error(xhr.responseText);
         },
       });
     });
+    
   });
 </script>
 {% endblock %}

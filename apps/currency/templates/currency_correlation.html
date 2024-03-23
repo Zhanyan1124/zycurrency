@@ -51,10 +51,9 @@
             <div class="mx-auto col-3">
                 <div class="form-group d-flex align-items-center" style="margin-bottom: 15px">
                     <label for="duration" class="form-label me-3">Duration:  </label>
-                    <select id="duration" name="duration" class="form-select">
-                        <option value="" disabled selected>Select Duration</option>
-                        <option value="1d">One Day</option>
-                        <option value="7d">One Week</option>
+                    <select id="duration" name="duration" class="form-select-sm">
+                        <option value="1d"> One Day</option>
+                        <option value="7d" selected>One Week</option>
                         <option value="14d">Two Weeks</option>
                         <option value="1m">One Month</option>
                         <option value="3m">Three Months</option>
@@ -66,7 +65,7 @@
                 </div>
             </div>
             <div class='mx-auto'>
-                <div id="heatMapChart"></canvas>
+                <div id="heatMapChart"></div>
             </div>
 
         </form>
@@ -77,8 +76,82 @@
 </div>
 
 <script>
+
 $(document).ready(function () {
-    function formatOption(option) {
+    //Define chart customizations
+    var options = {
+        chart: {
+            height: 450,
+            width:800,
+            type: "heatmap",
+        },
+        series: [],
+        tooltip: {
+            custom: function({series, seriesIndex, dataPointIndex, w}) {
+                return '<div class="custom-tooltip">' + 
+                    '<span class="tooltip-label">' + w.globals.seriesNames[seriesIndex] + ' / '  + w.globals.labels[dataPointIndex] + '</span>' + ' : ' +
+                    '<span class="tooltip-value">' +  series[seriesIndex][dataPointIndex] +'%' +  '</span>'
+                    '</div>';
+            },
+        },
+        noData: {
+            text: 'Requesting Data...'
+        },                    
+        plotOptions: {
+            heatmap: {
+                colorScale: {
+                    ranges: [{
+                        from: -30,
+                        to: -0.0001,
+                        color: '#c90202',
+                        name: 'Negative Changes',
+                    },
+                    {
+                        from: -0.0001,
+                        to: 0.0001,
+                        color: '#767676',
+                        name: 'No Changes',
+                    },
+                    {
+                        from: 0.0001,
+                        to: 30,
+                        color: '#018529',
+                        name: 'Postive Changes',
+                    }
+                    ]
+                },
+                reverseNegativeShade: true,
+            }
+        }
+    }
+    var chart = new ApexCharts(document.querySelector("#heatMapChart"), options);
+    chart.render();
+
+    //Send first ajax request when page initially load
+    var curValues = $('.cur_input').map(function() {
+        return $(this).val();
+    }).get();
+    var duration = $('#duration').val();
+    $.ajax({
+        url: "/currency/correlation-analysis",
+        type: "POST",
+        contentType: 'application/json',
+        data: JSON.stringify({
+            input_curs: curValues,
+            duration : duration
+        }),
+        success: function (response) {
+            console.log(response)
+            chart.updateSeries(response)
+        },
+        },
+        error: function (xhr, status, error) {
+            console.error(xhr.responseText);
+        },
+    });
+
+    //Customize currency selection field
+    function currencySelectionOption(option) {
         if (!option.id) {
             return option.text;
         }
@@ -97,31 +170,28 @@ $(document).ready(function () {
         );
     }
 
-
+    //Use Select2 package to define the select inputs
     $(".cur_input").select2({
         placeholder: 'Select Currency...',
         theme: "bootstrap-5",
-        templateResult: formatOption,
-        templateSelection: formatOption,
+        templateResult: currencySelectionOption,
+        templateSelection: currencySelectionOption,
         width: "100%",
     });
-    
     $('#duration').select2({
-        placeholder: 'Select Duration',
         theme: "bootstrap-5",
         minimumResultsForSearch: Infinity,
         width: "100%"
     })
 
-    $(document).on('change', '.cur_input, #duration', function() {
+    //Block user from choosing same currency again
+    $(document).on('change', '.cur_input',function(){
         var curValues = $('.cur_input').map(function() {
             return $(this).val();
         }).get();
-        var durationValue = $('#duration').val();
-        if (curValues.length>1 && durationValue != null)
-            $('#get_correlation_form').submit();
-    });
+    })
 
+    //Add Currency
     $('#add_button').click(function(){
         var $newCurDiv = $('<div>').addClass('form-group col');
         var $layoutDiv = $('<div>').addClass('d-flex align-items-center');
@@ -150,17 +220,29 @@ $(document).ready(function () {
         $('.cur_input').select2({
             placeholder: 'Select currency...',
             theme: "bootstrap-5",
-            templateResult: formatOption,
-            templateSelection: formatOption,
+            templateResult: currencySelectionOption,
+            templateSelection: currencySelectionOption,
             width: "100%",
         });
     });
 
+    //Remove Currency
     $(document).on('click', '.fa-minus', function() {
         $(this).closest('.form-group').remove();
     });
 
 
+    //Submit the form when data changes
+    $(document).on('change', '.cur_input, #duration', function() {
+        var curValues = $('.cur_input').map(function() {
+            return $(this).val();
+        }).get();
+        var durationValue = $('#duration').val();
+        if (curValues.length>1 && durationValue != null)
+            $('#get_correlation_form').submit();
+    });
+
+    //Send ajax request when form submitted to update chart
     $("#get_correlation_form").submit(function (event) {
         event.preventDefault();
 
@@ -180,55 +262,7 @@ $(document).ready(function () {
             }),
             success: function (response) {
                 console.log(response)
-                var options = {
-                    chart: {
-                        height: 450,
-                        width:800,
-                        type: "heatmap",
-                    },
-                    series: response,
-                    tooltip: {
-                        custom: function({series, seriesIndex, dataPointIndex, w}) {
-                            return '<div class="custom-tooltip">' + 
-                                '<span class="tooltip-label">' + w.globals.seriesNames[seriesIndex] + '/'  + w.globals.labels[dataPointIndex] + '</span>' + ' : ' +
-                                '<span class="tooltip-value">' +  series[seriesIndex][dataPointIndex] +'%' +  '</span>'
-                                '</div>';
-                        },
-                    },
-                    plotOptions: {
-                        heatmap: {
-                            colorScale: {
-                                ranges: [{
-                                    from: -30,
-                                    to: 0,
-                                    color: '#c90202',
-                                    name: 'Negative Changes',
-                                },
-                                {
-                                    from: 0,
-                                    to: 0.0001,
-                                    color: '#767676',
-                                    name: 'No Changes',
-                                },
-                                {
-                                    from: 0.0001,
-                                    to: 30,
-                                    color: '#018529',
-                                    name: 'Postive Changes',
-                                }
-                                ]
-                            },
-
-                            reverseNegativeShade: true,
-                        }
-                    }
-                }
-                var parent = $("#heatMapChart").parent();
-                $("#heatMapChart").remove();
-                var ctx = $("<div>").attr("id", "heatMapChart");
-                parent.append(ctx);  
-                var chart = new ApexCharts(document.querySelector("#heatMapChart"), options);
-                chart.render();
+                chart.updateSeries(response)
             },
             error: function (xhr, status, error) {
                 console.error(xhr.responseText);

@@ -1,7 +1,272 @@
-{% extends 'sidebar.html' %}
+{% extends 'sidebar.html' %} {% block content %}
+<div class="container w-70">
+    <div class="d-flex flex-column justify-content-start align-items-start mb-5">
+        <h4 class="text-left" style="margin-bottom: 10px">
+            Dashboard
+        </h4>
+        <div class="d-flex justify-content-start align-items-center mb-3 w-100">
+            <select class="form-select  " id="from_cur" name="from_cur">
+            {% for currency in currencies %} {% if from_cur and from_cur==currency.code%}
+            <option
+                value="{{ currency.code }}"
+                data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                selected
+            >
+                {{ currency.code }}
+            </option>
+            {% else %}
+            <option
+                value="{{ currency.code }}"
+                data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+            >
+                {{ currency.code }}
+            </option>
+            {% endif %} {% endfor %}
+            </select>
 
-{% block content %}
-    <div class='container'>
-        <h1 class='text-center'>HELLO WORLD</h1>
-    </div>
+            <i class="fa-solid fa-arrow-right fa-xl mx-4"></i><br>
+
+            <select class="form-select" id="to_cur" name="to_cur">
+            {% for currency in currencies %} {% if to_cur and to_cur==currency.code%}
+            <option
+                value="{{ currency.code }}"
+                data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                selected
+            >
+                {{ currency.code }}
+            </option>
+            {% else %}
+            <option
+                value="{{ currency.code }}"
+                data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+            >
+                {{ currency.code }}
+            </option>
+            {% endif %} {% endfor %}
+            </select>
+        </div>
+        <div class="d-flex justify-content-start align-items-start mb-3 w-100">
+            <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;">
+                <div style="font-size:0.7rem">From Last 7 Days</div>
+                <div class="border rounded px-3 py-1 my-2 fw-bold" style="font-size:0.75rem;display:none" id="changes"></div>
+                <div class="fw-bold" style="font-size:1.7rem;" id="latest_rate">0</div>
+                <div class="small">Exchange Rate</div>
+            </div>
+
+            <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center mx-4" style="width:150px;height:150px;">
+                <div style="font-size:0.7rem">From Last 7 Days</div>
+                <div class="border rounded px-3 py-1 my-2 fw-bold" style="font-size:0.75rem;display:none" id="rsi_changes"></div>
+                <div class="fw-bold" style="font-size:1.7rem;" id="latest_rsi">0</div>
+                <div class="small">RSI Value</div>
+            </div>
+        </div>    
+
+        <div class="d-flex justify-content-start align-items-start mb-3 w-100">
+            <div class="shadow bg-white px-5" style="width: 40%; height: 250px;">
+                <canvas id="exchangeChart"></canvas>
+            </div>
+
+            <div class="shadow bg-white px-5" style="width: 40%; margin-left:3%; height: 250px;">
+                <canvas id="rsiChart"></canvas>
+            </div>
+        </div>
+    </div>    
+
+</div>
+
+<script>
+$(document).ready(function () {
+    function formatOption(option) {
+        if (!option.id) {
+        return option.text;
+        }
+
+        var imageUrl = $(option.element).data("image");
+        if (!imageUrl) {
+        return option.text;
+        }
+
+        return $(
+        '<span><img src="' +
+            imageUrl +
+            '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' +
+            option.text +
+            "</span>"
+        );
+    }
+
+    $("#from_cur").select2({
+        theme: "bootstrap-5",
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        width: "30%",
+    });
+
+    $("#to_cur").select2({
+        theme: "bootstrap-5",
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        width: "30%",
+    });
+
+    var from_cur = $("#from_cur").val();
+    var to_cur = $("#to_cur").val();
+    var formData = {
+        'from_cur': from_cur,
+        'to_cur': to_cur,
+        'duration': '7d'
+    };
+
+    $.ajax({
+        url: "/currency/historical-exrate",
+        type: "POST",
+        dataType: 'json',
+        data: formData,
+        success: function (response) {
+            console.log(response);
+            var changes = response.changes;
+            $("#changes").show()
+            if (changes >= 0) {
+                $("#changes").text("+" + changes + "%");
+                $("#changes").css("color", "green");
+                $("#changes").css("background-color", "#C9FEC9");
+            } else {
+                $("#changes").text(changes + "%");
+                $("#changes").css("color", "red");
+                $("#changes").css("background-color", "#FFCCCB");
+            }
+            
+            var data = response.results;
+            var currency = Object.keys(data)[0];
+            var dates = Object.keys(data[currency]);
+            var exchangeRates = Object.values(data[currency]);
+            latest_rate = exchangeRates[exchangeRates.length - 1]
+            console.log(latest_rate)
+            $("#latest_rate").text(latest_rate) 
+    
+            var dataset = {
+                label: from_cur + "/" + to_cur + " Exchange Rate",
+                data: exchangeRates,
+            };
+    
+            var parent = $("#exchangeChart").parent();
+            $("#exchangeChart").remove();
+            var newCanvas = $("<canvas>").attr("id", "exchangeChart");
+            parent.append(newCanvas);
+    
+            var exchangeChart = new Chart(newCanvas, {
+                type: "line",
+                data: {
+                labels: dates,
+                datasets: [dataset],
+                },
+                options: {
+                scales: {
+                    yAxes: [
+                    {
+                        ticks: {
+                        beginAtZero: false,
+                    },
+                    },
+                    ],
+                },
+                },
+            });
+            },
+        error: function (xhr, status, error) {
+            console.error(xhr.responseText);
+        },
+    });
+
+    
+    $.ajax({
+        url: "/currency/historical-rsi",
+        type: "POST",
+        data: formData,
+        success: function (response) {
+            console.log(response);
+            var changes = response.changes;
+            $("#rsi_changes").show();
+            if (changes >= 0) {
+                $("#rsi_changes").text("+" + changes + "%");
+                $("#rsi_changes").css("color", "green");
+                $("#rsi_changes").css("background-color", "#C9FEC9");
+            } else {
+                $("#rsi_changes").text(changes + "%");
+                $("#rsi_changes").css("color", "red");
+                $("#rsi_changes").css("background-color", "#FFCCCB");
+            }
+    
+            var rsi_values = response.rsi_values;
+            var dates = response.dates;
+            latest_rsi = rsi_values[rsi_values.length - 1]
+            console.log(latest_rsi)
+            $("#latest_rsi").text(Math.floor(latest_rsi)) 
+
+            console.log(rsi_values);
+            console.log(dates);
+            var dataset = {
+            label: from_cur + "/" + to_cur + " RSI Values",
+            data: rsi_values,
+            };
+
+            var parent = $("#rsiChart").parent();
+            $("#rsiChart").remove();
+            var newCanvas = $("<canvas>").attr("id", "rsiChart");
+            parent.append(newCanvas);
+
+            var rsiChart = new Chart(newCanvas, {
+            type: "line",
+            data: {
+                labels: dates,
+                datasets: [dataset],
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: false,
+                        },
+                    }],
+                },
+                plugins: {
+                    annotation: {
+                    annotations: {
+                        line1: {
+                        type: 'line',
+                        yMin: 70,
+                        yMax: 70,
+                        borderColor: 'rgb(255, 99, 132)',
+                        borderWidth: 2,
+                        label:{
+                            content: "Overbought",
+                            position: 'end',
+                            display: true
+                        }
+                        },
+                        line2: {
+                        type: 'line',
+                        yMin: 30,
+                        yMax: 30,
+                        borderColor: 'green',
+                        borderWidth: 2,
+                        label:{
+                            content: "Oversold",
+                            position: 'end',
+                            display: true
+                        }
+                        }
+                    },
+                    }
+                }
+            },
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error(xhr.responseText);
+        },
+    });
+});
+    
+</script>
 {% endblock %}

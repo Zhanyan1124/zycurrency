@@ -131,7 +131,6 @@ def retrieve_historical_exchange_rate():
             start_date = end_date - relativedelta(months=int(duration[:-1]))
         elif duration.endswith('y'):    
             start_date = end_date - relativedelta(years=int(duration[:-1]))
-    
         headers = {"accept": "application/json"}
         response=None
     
