@@ -5,7 +5,7 @@
             Currency Dashboard
         </h4>
 
-        <div class="bg-white border shadow rounded px-3 py-2" style="width:80%">
+        <div class="bg-white border shadow rounded px-3 py-2 my-2" style="width:90%">
             <div class="d-flex justify-content-start align-items-center mb-3 w-100">
                 <select class="form-select  " id="from_cur" name="from_cur">
                 {% for currency in currencies %} {% if from_cur and from_cur==currency.code%}
@@ -65,14 +65,14 @@
                 <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
                     <div class="small">ExRate Changes</div>
                     <div class="small currency_pair"></div>
-                    <div class="fw-bold my-2 text-center" style="font-size:1.3rem;" id="exrate_changes"><i class="mx-2"></i><span></span></div>
+                    <div class="fw-bold my-2 text-center" style="font-size:1.3rem;" id="exrate_changes"><i class="mx-2"></i><span>0</span></div>
                     <div style="font-size:0.7rem">From Last 7 Days</div>
                 </div>
                 
                 <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
                     <div class="small">RSI Value Changes</div>
                     <div class="small currency_pair"></div>
-                    <div class="fw-bold my-2 text-center" style="font-size:1.3rem;" id="rsi_changes"> <i class="mx-2"></i><span></span></div>
+                    <div class="fw-bold my-2 text-center" style="font-size:1.3rem;" id="rsi_changes"> <i class="mx-2"></i><span>0</span></div>
                     <div style="font-size:0.7rem">From Last 7 Days</div>
                 </div>
             </div>    
@@ -87,6 +87,26 @@
                 </div>
             </div>
         </div>    
+        <div class="bg-white border shadow rounded px-3 py-4" style="width:90%">
+            <div class="fw-bold">Popular Currencies Comparison</div>
+            <div class="d-flex justify-content-start align-items-centert">
+                <div class="col-6 border shadow rounded my-2" id="comparisonByPopularChart"></div>
+                <div class='col-5 border rounded px-3 py-3 shadow my-2 mx-3' id="comparison_popular_table" style="margin-bottom: 15px;display:none; font-size:14px">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Currency</th>
+                            <th>Historical Rate</th>
+                            <th>Current Rate</th>
+                            <th>Changes</th>
+                        </tr>
+                        </thead>
+                        <tbody id="comparison_popular_table_body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -130,9 +150,33 @@ function convertObjectToList(objects){
     return result;
 }
 
+function modifyComparisonByPopularTable(response, baseCur){
+    $('#comparison_popular_table').show();
+    $('#comparison_popular_table_body').empty();
+    $.each(response, function(index, item) {
+        var newRow = $('<tr>');
+        var currency = $('<td>').text(baseCur + " / " + item.currency);
+        var exchangeRate = $('<td>').text(item.exchange_rate.toFixed(3)).addClass('fw-bold text-center');
+        var historicalRate = $('<td>').text(item.historical_rate.toFixed(3)).addClass('fw-bold text-center');
+        if (item.changes>0)
+            var changes = $('<td>').text('+' + item.changes.toFixed(3) + '%').addClass('fw-bold text-center').attr('style','color:green');
+        else if(item.changes<0)
+            var changes = $('<td>').text(item.changes.toFixed(3) + '%').addClass('fw-bold text-center').attr('style','color:red');
+        else
+            var changes = $('<td>').text(item.changes.toFixed(3) + '%').addClass('fw-bold text-center');
+
+        newRow.append(currency);
+        newRow.append(historicalRate);
+        newRow.append(exchangeRate);
+        newRow.append(changes);
+
+        $('#comparison_popular_table_body').append(newRow);
+    });
+}
+
 $(document).ready(function () {
-    //Define chart customizations
-    var options = {
+    //Define line chart customizations
+    var lineChartOptions = {
         chart: {
             height: 250,
             width: "100%",
@@ -191,10 +235,84 @@ $(document).ready(function () {
         }
     };
 
-    var exchange_chart = new ApexCharts(document.querySelector("#exchangeChart"), options);
+    var exchange_chart = new ApexCharts(document.querySelector("#exchangeChart"), lineChartOptions);
     exchange_chart.render();
-    var rsi_chart = new ApexCharts(document.querySelector("#rsiChart"), options);
+    var rsi_chart = new ApexCharts(document.querySelector("#rsiChart"), lineChartOptions);
     rsi_chart.render();
+
+    //Define bar chart customizations
+    var barChartOptions = {
+        chart: {
+            height: 300,
+            width: "100%",
+            type: "bar",
+            toolbar: {
+                show: false,
+            },
+        },
+        series: [],
+        noData: {
+            text: 'Requesting Data...'
+        },                    
+        plotOptions: {
+            bar: {
+                borderRadius: 10,
+                distributed: true,
+                dataLabels: {
+                    position: 'top',
+                },
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val + "%";
+            },
+            style: {
+                fontSize: '12px',
+                colors: ["#304758"]
+            }
+        },
+        yaxis: {
+            labels: {
+                show: false,
+                formatter: function (val) {
+                    return val + "%";
+                }
+            },
+            axisBorder: {
+                show: false
+            },
+            axisTicks: {
+                show: false,
+            },
+        },
+        xaxis:{
+            axisBorder: {
+                show: false
+            },
+            axisTicks: {
+                show: false
+            },
+        },
+        title: {
+            align: 'left',
+            margin: 10,
+            offsetX: 0,
+            offsetY: 0,
+            floating: false,
+            style: {
+                fontSize:  '12px',
+                fontWeight:  'normal',
+                color:  '#263238'
+            },
+        },
+        legend:{
+            show: false,
+        }
+    }
+    var compare_by_popular_chart = new ApexCharts(document.querySelector("#comparisonByPopularChart"), barChartOptions);
+    compare_by_popular_chart.render();
 
 
     //Customize currency selection field
@@ -232,20 +350,20 @@ $(document).ready(function () {
         width: "30%",
     });
 
-    //Send ajax request when page initially load
+
     var from_cur = $("#from_cur").val();
     var to_cur = $("#to_cur").val();
     var latestExRateFormData = {
         'from_cur': from_cur,
         'to_cur': to_cur,
     };
-
     var historicalFormData = {
         'from_cur': from_cur,
         'to_cur': to_cur,
         'duration': '7d'
     };
 
+    //Send ajax request to get latest exrate when page loads
     $.ajax({
         url: "/currency/latest-exrate",
         type: "POST",
@@ -262,6 +380,7 @@ $(document).ready(function () {
         },
     });
 
+    //Send ajax request to get historical exrate values when page loads
     $.ajax({
         url: "/currency/historical-exrate",
         type: "POST",
@@ -286,7 +405,7 @@ $(document).ready(function () {
         },
     });
 
-    
+    //Send ajax request to get historical rsi values when page loads
     $.ajax({
         url: "/currency/historical-rsi",
         type: "POST",
@@ -349,7 +468,41 @@ $(document).ready(function () {
         },
     });
 
+    //Send ajax request to get currency comparison when page loads
+    var popularCurs = {{ popular_curs | tojson }};
+    var fromCur = "{{ from_cur }}";
+    $.ajax({
+        url: "/currency/comparison",
+        type: "POST",
+        contentType: 'application/json',
+        data: JSON.stringify({
+            base_cur: fromCur,
+            compare_curs: popularCurs,
+            duration : '7d'
+        }),
+        success: function (response) {
+            console.log(response);
+            modifyComparisonByPopularTable(response, fromCur)
+            var currencies = response.map(item => item.currency);
+            var changes = response.map(item => item.changes.toFixed(3));
 
+            compare_by_popular_chart.updateSeries([{
+                name: "ExRate Changes based on " + fromCur,
+                data: changes
+            }]);
+            compare_by_popular_chart.updateOptions({
+                title:{
+                    text: 'Exchange Rate Changes based on ' + fromCur + ' (7 Days)',
+                },
+                xaxis: {    
+                    categories: currencies
+                }
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error(xhr.responseText);
+        },
+    });
 });
     
 </script>

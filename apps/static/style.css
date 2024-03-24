@@ -158,10 +158,15 @@ a.profile-link:hover{
     display: none;
   }
 
-.radio-label {
+.radio-label .radio-currency-selection {
     cursor: pointer;
     padding: 10px 20px;
     margin: 0 5px;
+}
+
+.radio-currency-selection:hover {
+    font-size:1.01rem;
+    cursor:pointer
 }
 
 .radio-label:hover{

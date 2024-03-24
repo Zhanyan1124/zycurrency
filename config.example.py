@@ -25,3 +25,6 @@ class Config:
     CELERY_BROKER_URL='redis://localhost:6379/0',
     CELERY_RESULT_BACKEND='redis://localhost:6379/0'
     CELERY_TASK_IGNORE_RESULT = False
+
+    POPULAR_CURRENCIES= ['USD', 'EUR', 'JPY', 'GBP', 'CNY'] 
+    POPULAR_CURRENCIES_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD', 'USD/CAD']

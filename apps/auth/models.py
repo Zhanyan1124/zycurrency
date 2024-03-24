@@ -12,6 +12,7 @@ class User(db.Model, UserMixin):
     picture_url = db.Column(db.String(255))
     nationality = db.Column(db.String(3), db.ForeignKey('country.code'), nullable=True)
     default_cur = db.Column(db.String(3), db.ForeignKey('currency.code'), nullable=True)
+    second_cur = db.Column(db.String(3), db.ForeignKey('currency.code'), nullable=True)
 
     currency = relationship('Currency', backref='users')
     country = relationship('Country', backref='users')

@@ -16,12 +16,9 @@ currency_bp = Blueprint('currency', __name__, template_folder='templates')
 @currency_bp.route('/convert', methods=['GET'])
 @login_required
 def convert():
-    from_cur=None
+    from_cur=current_user.default_cur
     to_cur='USD'
     currencies = Currency.query.all()
-
-    if current_user.default_cur != None:
-        from_cur = current_user.default_cur
         
     return render_template('convert.html', user=current_user, currencies=currencies, from_cur=from_cur, to_cur=to_cur, csrf_token = generate_csrf())
 
@@ -29,11 +26,8 @@ def convert():
 @login_required
 def historical_exchange_rate():
     currencies = Currency.query.all()
-    from_cur=None
+    from_cur= current_user.default_cur
     to_cur='USD'
-
-    if current_user.default_cur is not None:
-        from_cur = current_user.default_cur
     
     return render_template('historical_exchange_rate.html', csrf_exrate_token = generate_csrf(), csrf_notification_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
 
@@ -41,32 +35,28 @@ def historical_exchange_rate():
 @login_required
 def historical_rsi_value():
     currencies = Currency.query.all()
-    from_cur=None
+    from_cur = current_user.default_cur
     to_cur='USD'
 
-    if current_user.default_cur is not None:
-        from_cur = current_user.default_cur
-    
     return render_template('historical_rsi_value.html', csrf_rsi_token = generate_csrf(), csrf_notification_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
 
 @currency_bp.route('/comparison', methods=['GET'])
 @login_required
 def currency_comparison():
     currencies = Currency.query.all()
-    base_cur=None
-    compare_cur = 'USD'
-    if current_user.default_cur is not None:
-        base_cur = current_user.default_cur
+    base_cur = current_user.default_cur
+    compare_curs = current_app.config["POPULAR_CURRENCIES"]
+    if base_cur in compare_curs:
+        compare_curs.remove(base_cur)
     
-    return render_template('currency_comparison.html', csrf_token = generate_csrf(), currencies=currencies, base_cur=base_cur, compare_cur=compare_cur)
+    return render_template('currency_comparison.html', csrf_token = generate_csrf(), currencies=currencies, base_cur=base_cur, compare_curs=compare_curs)
 
 @currency_bp.route('/correlation-analysis', methods=['GET'])
 @login_required
 def currency_correlation_analysis():
     currencies = Currency.query.all()
     input_curs=[]
-    if current_user.default_cur is not None:
-        input_curs.append(current_user.default_cur)
+    input_curs.append(current_user.default_cur)
     input_curs.append('USD')
     
     return render_template('currency_correlation.html', csrf_token = generate_csrf(), currencies=currencies, input_curs=input_curs)
@@ -302,9 +292,6 @@ def retrieve_currency_comparison():
         base_cur = request_json.get('base_cur')
         compare_curs = request_json.get('compare_curs')
         duration = request_json.get('duration')
-        print(base_cur)
-        print(compare_curs)
-        print(duration)
 
         if base_cur is None or compare_curs is None:
             raise DataMissingException('Select currency to proceed')

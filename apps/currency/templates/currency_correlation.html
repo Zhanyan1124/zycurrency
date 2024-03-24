@@ -184,12 +184,14 @@ $(document).ready(function () {
     })
 
     //Block user from choosing same currency again
+    /*
     $(document).on('change', '.cur_input',function(){
         var curValues = $('.cur_input').map(function() {
             return $(this).val();
         }).get();
     })
-
+    */
+    
     //Add Currency
     $('#add_button').click(function(){
         var $newCurDiv = $('<div>').addClass('form-group col');
