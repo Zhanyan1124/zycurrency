@@ -71,6 +71,46 @@ def currency_correlation_analysis():
     
     return render_template('currency_correlation.html', csrf_token = generate_csrf(), currencies=currencies, input_curs=input_curs)
 
+@currency_bp.route('/latest-exrate', methods=['POST'])
+@login_required
+def retrieve_latest_rate():
+    try:
+        from_cur = request.form.get('from_cur')
+        to_cur = request.form.get('to_cur')
+
+        if from_cur is None or to_cur is None:
+            raise DataMissingException('Select currency to proceed')
+
+        headers = {"accept": "application/json"}
+        exrate_url = "{}/fetch-one?api_key={}&from={}&to={}".format(current_app.config['FAST_FOREX_API_URL'], current_app.config['FAST_FOREX_API_KEY'], from_cur, to_cur)
+        response = requests.get(exrate_url, headers=headers)
+
+        if response.status_code == 200:
+            json_obj = response.json()
+            print(json_obj)  
+            result= json_obj['result']
+            exchange_rate = result[to_cur]
+            updated = json_obj['updated']
+            updated_date, updated_time = updated.split(" ")
+            data = {
+                "updated_date": updated_date,
+                "updated_time": updated_time,
+                "exchange_rate": exchange_rate,
+            }
+            return jsonify(data), 200
+        else:
+            print(f"Error: {response.status_code} - {response.text}")
+            return jsonify({'error': str(e)}), 400
+    
+    except DataMissingException as e:
+        print(str(e))
+        return jsonify({'error': str(e)}), 400
+
+    except Exception as e:
+        print(str(e))
+        return jsonify({'error': str(e)}), 400
+
+
 @currency_bp.route('/convert', methods=['POST'])
 @login_required
 def retrieve_convertion():

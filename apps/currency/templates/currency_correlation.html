@@ -144,7 +144,6 @@ $(document).ready(function () {
             console.log(response)
             chart.updateSeries(response)
         },
-        },
         error: function (xhr, status, error) {
             console.error(xhr.responseText);
         },
@@ -238,8 +237,9 @@ $(document).ready(function () {
             return $(this).val();
         }).get();
         var durationValue = $('#duration').val();
-        if (curValues.length>1 && durationValue != null)
+        if (curValues.length > 1 && durationValue != null) { 
             $('#get_correlation_form').submit();
+        }
     });
 
     //Send ajax request when form submitted to update chart

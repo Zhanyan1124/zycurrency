@@ -1,82 +1,204 @@
 {% extends 'sidebar.html' %} {% block content %}
 <div class="container w-70">
     <div class="d-flex flex-column justify-content-start align-items-start mb-5">
-        <h4 class="text-left" style="margin-bottom: 10px">
-            Dashboard
+        <h4 class="text-left px-4 fw-bold" style="margin-bottom: 10px">
+            Currency Dashboard
         </h4>
-        <div class="d-flex justify-content-start align-items-center mb-3 w-100">
-            <select class="form-select  " id="from_cur" name="from_cur">
-            {% for currency in currencies %} {% if from_cur and from_cur==currency.code%}
-            <option
-                value="{{ currency.code }}"
-                data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
-                selected
-            >
-                {{ currency.code }}
-            </option>
-            {% else %}
-            <option
-                value="{{ currency.code }}"
-                data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
-            >
-                {{ currency.code }}
-            </option>
-            {% endif %} {% endfor %}
-            </select>
 
-            <i class="fa-solid fa-arrow-right fa-xl mx-4"></i><br>
-
-            <select class="form-select" id="to_cur" name="to_cur">
-            {% for currency in currencies %} {% if to_cur and to_cur==currency.code%}
-            <option
-                value="{{ currency.code }}"
-                data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
-                selected
-            >
-                {{ currency.code }}
-            </option>
-            {% else %}
-            <option
-                value="{{ currency.code }}"
-                data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
-            >
-                {{ currency.code }}
-            </option>
-            {% endif %} {% endfor %}
-            </select>
-        </div>
-        <div class="d-flex justify-content-start align-items-start mb-3 w-100">
-            <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;">
-                <div style="font-size:0.7rem">From Last 7 Days</div>
-                <div class="border rounded px-3 py-1 my-2 fw-bold" style="font-size:0.75rem;display:none" id="changes"></div>
-                <div class="fw-bold" style="font-size:1.7rem;" id="latest_rate">0</div>
-                <div class="small">Exchange Rate</div>
+        <div class="bg-white border shadow rounded px-3 py-2" style="width:80%">
+            <div class="d-flex justify-content-start align-items-center mb-3 w-100">
+                <select class="form-select  " id="from_cur" name="from_cur">
+                {% for currency in currencies %} {% if from_cur and from_cur==currency.code%}
+                <option
+                    value="{{ currency.code }}"
+                    data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                    selected
+                >
+                    {{ currency.code }}
+                </option>
+                {% else %}
+                <option
+                    value="{{ currency.code }}"
+                    data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                >
+                    {{ currency.code }}
+                </option>
+                {% endif %} {% endfor %}
+                </select>
+    
+                <i class="fa-solid fa-arrow-right fa-xl mx-4"></i><br>
+    
+                <select class="form-select" id="to_cur" name="to_cur">
+                {% for currency in currencies %} {% if to_cur and to_cur==currency.code%}
+                <option
+                    value="{{ currency.code }}"
+                    data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                    selected
+                >
+                    {{ currency.code }}
+                </option>
+                {% else %}
+                <option
+                    value="{{ currency.code }}"
+                    data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
+                >
+                    {{ currency.code }}
+                </option>
+                {% endif %} {% endfor %}
+                </select>
             </div>
+            <div style="font-size:0.7rem; padding-left:10px">Last Updated On:</div>
+            <div style="font-size:0.65rem;padding-left:10px" class="updated_date mb-2 fw-bold"></div>
+            <div class="d-flex justify-content-start align-items-start mb-3 w-100">
+                <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
+                    <div class="small">Exchange Rate</div>
+                    <div class="small currency_pair"></div>
+                    <div class="fw-bold" style="font-size:1.7rem;" id="latest_rate">0</div>
+                </div>
 
-            <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center mx-4" style="width:150px;height:150px;">
-                <div style="font-size:0.7rem">From Last 7 Days</div>
-                <div class="border rounded px-3 py-1 my-2 fw-bold" style="font-size:0.75rem;display:none" id="rsi_changes"></div>
-                <div class="fw-bold" style="font-size:1.7rem;" id="latest_rsi">0</div>
-                <div class="small">RSI Value</div>
+                <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
+                    <div class="small">RSI Value</div>
+                    <div class="small currency_pair"></div>
+                    <div class="fw-bold" style="font-size:1.7rem;" id="latest_rsi">0</div>
+                </div>
+
+                <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
+                    <div class="small">ExRate Changes</div>
+                    <div class="small currency_pair"></div>
+                    <div class="fw-bold my-2 text-center" style="font-size:1.3rem;" id="exrate_changes"><i class="mx-2"></i><span></span></div>
+                    <div style="font-size:0.7rem">From Last 7 Days</div>
+                </div>
+                
+                <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
+                    <div class="small">RSI Value Changes</div>
+                    <div class="small currency_pair"></div>
+                    <div class="fw-bold my-2 text-center" style="font-size:1.3rem;" id="rsi_changes"> <i class="mx-2"></i><span></span></div>
+                    <div style="font-size:0.7rem">From Last 7 Days</div>
+                </div>
+            </div>    
+
+            <div class="d-flex justify-content-start align-items-start mb-3 w-100">
+                <div class="shadow bg-white  border rounded" style="width: 47%; height: 250px;">
+                    <div id="exchangeChart"></div>
+                </div>
+
+                <div class="shadow bg-white border rounded" style="width: 47%; margin-left:3%; height: 250px;">
+                    <div id="rsiChart"></div>
+                </div>
             </div>
         </div>    
-
-        <div class="d-flex justify-content-start align-items-start mb-3 w-100">
-            <div class="shadow bg-white px-5" style="width: 40%; height: 250px;">
-                <canvas id="exchangeChart"></canvas>
-            </div>
-
-            <div class="shadow bg-white px-5" style="width: 40%; margin-left:3%; height: 250px;">
-                <canvas id="rsiChart"></canvas>
-            </div>
-        </div>
-    </div>    
-
+    </div>
 </div>
 
 <script>
+function fillExRateChanges(changes){
+    $("#exrate_changes").show()
+    if (changes >= 0) {
+        $("#exrate_changes span").text(changes.toFixed(3) + "%");
+        $("#exrate_changes span").css("color", "green");
+        $("#exrate_changes i").addClass("fa-solid fa-arrow-up");
+        $("#exrate_changes i").css("color", "green");
+    } else {
+
+        $("#exrate_changes span").text(Math.abs(changes.toFixed(3)) + "%");
+        $("#exrate_changes span").css("color", "red");
+        $("#exrate_changes i").addClass("fa-solid fa-arrow-down");
+        $("#exrate_changes i").css("color", "red");
+    }
+}
+
+function fillRSIChanges(changes){
+    $("#rsi_changes").show();
+    if (changes >= 0) {
+        $("#rsi_changes span").text(changes.toFixed(1) + "%");
+        $("#rsi_changes span").css("color", "green");
+        $("#rsi_changes i").addClass("fa-solid fa-arrow-up");
+        $("#rsi_changes i").css("color", "green");
+    } else {
+        $("#rsi_changes span").text(Math.abs(changes.toFixed(1)) + "%");
+        $("#rsi_changes span").css("color", "red");
+        $("#rsi_changes i").addClass("fa-solid fa-arrow-down");
+        $("#rsi_changes i").css("color", "red");
+    }
+}
+
+function convertObjectToList(objects){
+    var data = objects;
+    var currency = Object.keys(data)[0];
+
+    var result = Object.entries(data[currency]).map(([date, value]) => [date, value]);
+    return result;
+}
+
 $(document).ready(function () {
-    function formatOption(option) {
+    //Define chart customizations
+    var options = {
+        chart: {
+            height: 250,
+            width: "100%",
+            type: "line",
+            animations: {
+                initialAnimation: {
+                enabled: false
+                }
+            },
+            toolbar: {
+                show: false,
+                tools: {
+                    download: false,
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false, 
+                    reset:false
+                },
+            },
+        },
+        stroke: {
+            curve: 'smooth',
+        },
+        title: {
+            align: 'left',
+            margin: 10,
+            offsetX: 0,
+            offsetY: 0,
+            floating: false,
+            style: {
+                fontSize:  '12px',
+                fontWeight:  'normal',
+                color:  '#263238'
+            },
+        },
+        dataLabels: { 
+            enabled: false
+        },
+        noData: {
+            text: 'Requesting Data...'
+        },
+        series: [],
+        xaxis: {
+            type: "datetime",
+        },
+        yaxis:{
+            labels: {
+                show: false,
+            }
+        },
+        grid: {
+            show: true,
+            strokeDashArray: 1,
+        }
+    };
+
+    var exchange_chart = new ApexCharts(document.querySelector("#exchangeChart"), options);
+    exchange_chart.render();
+    var rsi_chart = new ApexCharts(document.querySelector("#rsiChart"), options);
+    rsi_chart.render();
+
+
+    //Customize currency selection field
+    function currencySelectionOption(option) {
         if (!option.id) {
         return option.text;
         }
@@ -93,86 +215,72 @@ $(document).ready(function () {
             option.text +
             "</span>"
         );
-    }
+    };
 
+    //Use Select2 package to define the select inputs
     $("#from_cur").select2({
         theme: "bootstrap-5",
-        templateResult: formatOption,
-        templateSelection: formatOption,
+        templateResult: currencySelectionOption,
+        templateSelection: currencySelectionOption,
         width: "30%",
     });
 
     $("#to_cur").select2({
         theme: "bootstrap-5",
-        templateResult: formatOption,
-        templateSelection: formatOption,
+        templateResult: currencySelectionOption,
+        templateSelection: currencySelectionOption,
         width: "30%",
     });
 
+    //Send ajax request when page initially load
     var from_cur = $("#from_cur").val();
     var to_cur = $("#to_cur").val();
-    var formData = {
+    var latestExRateFormData = {
+        'from_cur': from_cur,
+        'to_cur': to_cur,
+    };
+
+    var historicalFormData = {
         'from_cur': from_cur,
         'to_cur': to_cur,
         'duration': '7d'
     };
 
     $.ajax({
+        url: "/currency/latest-exrate",
+        type: "POST",
+        dataType: 'json',
+        data: latestExRateFormData,
+        success: function (response){
+            console.log(response);
+            $("#latest_rate").text(response.exchange_rate);
+            $(".updated_date").text(response.updated_date + "\n (" + response.updated_time + ") ");
+            $(".currency_pair").text("("+ from_cur + " / " + to_cur +")")
+        },
+        error:function (xhr, status, error) {
+            console.error(xhr.responseText);
+        },
+    });
+
+    $.ajax({
         url: "/currency/historical-exrate",
         type: "POST",
         dataType: 'json',
-        data: formData,
+        data: historicalFormData,
         success: function (response) {
             console.log(response);
-            var changes = response.changes;
-            $("#changes").show()
-            if (changes >= 0) {
-                $("#changes").text("+" + changes + "%");
-                $("#changes").css("color", "green");
-                $("#changes").css("background-color", "#C9FEC9");
-            } else {
-                $("#changes").text(changes + "%");
-                $("#changes").css("color", "red");
-                $("#changes").css("background-color", "#FFCCCB");
-            }
-            
-            var data = response.results;
-            var currency = Object.keys(data)[0];
-            var dates = Object.keys(data[currency]);
-            var exchangeRates = Object.values(data[currency]);
-            latest_rate = exchangeRates[exchangeRates.length - 1]
-            console.log(latest_rate)
-            $("#latest_rate").text(latest_rate) 
-    
-            var dataset = {
-                label: from_cur + "/" + to_cur + " Exchange Rate",
-                data: exchangeRates,
-            };
-    
-            var parent = $("#exchangeChart").parent();
-            $("#exchangeChart").remove();
-            var newCanvas = $("<canvas>").attr("id", "exchangeChart");
-            parent.append(newCanvas);
-    
-            var exchangeChart = new Chart(newCanvas, {
-                type: "line",
-                data: {
-                labels: dates,
-                datasets: [dataset],
-                },
-                options: {
-                scales: {
-                    yAxes: [
-                    {
-                        ticks: {
-                        beginAtZero: false,
-                    },
-                    },
-                    ],
-                },
-                },
-            });
-            },
+            fillExRateChanges(response.changes);
+            const exchange_chart_data = convertObjectToList(response.results)    
+            exchange_chart.updateSeries([{
+                name: $("#from_cur").val() + " / " + $("#to_cur").val() + " Exchange Rate:",
+                data: exchange_chart_data
+            }])
+            exchange_chart.updateOptions({
+                title: {
+                    text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical Exchange Rates (7 Days)",
+                }
+            })
+        },
         error: function (xhr, status, error) {
             console.error(xhr.responseText);
         },
@@ -182,90 +290,66 @@ $(document).ready(function () {
     $.ajax({
         url: "/currency/historical-rsi",
         type: "POST",
-        data: formData,
+        data: historicalFormData,
         success: function (response) {
             console.log(response);
-            var changes = response.changes;
-            $("#rsi_changes").show();
-            if (changes >= 0) {
-                $("#rsi_changes").text("+" + changes + "%");
-                $("#rsi_changes").css("color", "green");
-                $("#rsi_changes").css("background-color", "#C9FEC9");
-            } else {
-                $("#rsi_changes").text(changes + "%");
-                $("#rsi_changes").css("color", "red");
-                $("#rsi_changes").css("background-color", "#FFCCCB");
-            }
-    
+            fillRSIChanges(response.changes)
             var rsi_values = response.rsi_values;
             var dates = response.dates;
+
             latest_rsi = rsi_values[rsi_values.length - 1]
-            console.log(latest_rsi)
-            $("#latest_rsi").text(Math.floor(latest_rsi)) 
+            $("#latest_rsi").text(latest_rsi.toFixed(1)) 
 
-            console.log(rsi_values);
-            console.log(dates);
-            var dataset = {
-            label: from_cur + "/" + to_cur + " RSI Values",
-            data: rsi_values,
-            };
-
-            var parent = $("#rsiChart").parent();
-            $("#rsiChart").remove();
-            var newCanvas = $("<canvas>").attr("id", "rsiChart");
-            parent.append(newCanvas);
-
-            var rsiChart = new Chart(newCanvas, {
-            type: "line",
-            data: {
-                labels: dates,
-                datasets: [dataset],
-            },
-            options: {
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: false,
-                        },
-                    }],
-                },
-                plugins: {
-                    annotation: {
-                    annotations: {
-                        line1: {
-                        type: 'line',
-                        yMin: 70,
-                        yMax: 70,
-                        borderColor: 'rgb(255, 99, 132)',
-                        borderWidth: 2,
-                        label:{
-                            content: "Overbought",
-                            position: 'end',
-                            display: true
-                        }
-                        },
-                        line2: {
-                        type: 'line',
-                        yMin: 30,
-                        yMax: 30,
-                        borderColor: 'green',
-                        borderWidth: 2,
-                        label:{
-                            content: "Oversold",
-                            position: 'end',
-                            display: true
-                        }
-                        }
-                    },
-                    }
-                }
-            },
+            var rsi_chart_data = rsi_values.map(function(value, index) {
+                return [dates[index], value.toFixed(1)];
             });
+
+            rsi_chart.updateSeries([{
+                name: $("#from_cur").val() + " / " + $("#to_cur").val() + " RSI Value: ",
+                data: rsi_chart_data
+            }])
+            rsi_chart.updateOptions({
+                title: {
+                    text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical RSI Values (7 Days)",
+                },
+                annotations: {
+                    yaxis: [
+                        {
+                            y: 70,
+                            strokeDashArray: 1,
+                            borderColor: 'black',
+                            label: {
+                                borderColor: 'black',
+                                style: {
+                                    color: '#fff',
+                                    background: 'black'
+                                },
+                                text: 'Overbought'
+                            }
+                        },
+                        {
+                            y: 30,
+                            strokeDashArray: 1,
+                            borderColor: 'black',
+                            label: {
+                                borderColor: 'black',
+                                style: {
+                                    color: '#fff',
+                                    background: 'black'
+                                },
+                                text: 'Oversold'
+                            }
+                        },
+                        ]
+                    }
+            })
         },
         error: function (xhr, status, error) {
             console.error(xhr.responseText);
         },
     });
+
+
 });
     
 </script>
