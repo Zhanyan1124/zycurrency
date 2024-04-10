@@ -98,7 +98,7 @@
 
       </form>
 
-      {% include 'includes/exchange_rate_notification.html'%}
+      {% include 'includes/rsi_notification.html'%}
 
       <div
         class="row justify-content-between align-items-center"
@@ -245,9 +245,13 @@
       data: formData,
       success: function (response) {
         console.log(response);
-        fillRSIChanges(response.changes)
+        fillRSIChanges(response.changes);
 
         var rsi_values = response.rsi_values;
+        latest_rsi = rsi_values[rsi_values.length-1];
+        $("#current_rsi").text(latest_rsi.toFixed(1));
+        $("#current_rsi_section").show();
+
         var dates = response.dates;
 
         var chart_data = rsi_values.map(function(value, index) {

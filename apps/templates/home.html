@@ -14,14 +14,14 @@
                     data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
                     selected
                 >
-                    {{ currency.code }}
+                    {{ currency.code + ' - ' + currency.name}}
                 </option>
                 {% else %}
                 <option
                     value="{{ currency.code }}"
                     data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
                 >
-                    {{ currency.code }}
+                    {{ currency.code + ' - ' + currency.name }}
                 </option>
                 {% endif %} {% endfor %}
                 </select>
@@ -35,14 +35,14 @@
                     data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
                     selected
                 >
-                    {{ currency.code }}
+                {{ currency.code + ' - ' + currency.name }}
                 </option>
                 {% else %}
                 <option
                     value="{{ currency.code }}"
                     data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
                 >
-                    {{ currency.code }}
+                    {{ currency.code + ' - ' + currency.name }}
                 </option>
                 {% endif %} {% endfor %}
                 </select>
@@ -53,13 +53,13 @@
                 <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
                     <div class="small">Exchange Rate</div>
                     <div class="small currency_pair"></div>
-                    <div class="fw-bold" style="font-size:1.7rem;" id="latest_rate">0</div>
+                    <div class="fw-bold" style="font-size:1.5rem;" id="latest_rate">0</div>
                 </div>
 
                 <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
                     <div class="small">RSI Value</div>
                     <div class="small currency_pair"></div>
-                    <div class="fw-bold" style="font-size:1.7rem;" id="latest_rsi">0</div>
+                    <div class="fw-bold" style="font-size:1.5rem;" id="latest_rsi">0</div>
                 </div>
 
                 <div class=" d-flex flex-column justify-content-center align-items-center border rounded bg-white shadow text-center" style="width:150px;height:150px;margin-right:2%">
@@ -87,7 +87,7 @@
                 </div>
             </div>
         </div>    
-        <div class="bg-white border shadow rounded px-3 py-4" style="width:90%">
+        <div class="bg-white border shadow rounded px-3 py-4 mb-3" style="width:90%">
             <div class="fw-bold">Popular Currencies Comparison</div>
             <div class="d-flex justify-content-start align-items-centert">
                 <div class="col-6 border shadow rounded my-2" id="comparisonByPopularChart"></div>
@@ -107,6 +107,28 @@
                 </div>
             </div>
         </div>
+        {% if fav_curs and fav_curs|length>1 %}
+        <div class="bg-white border shadow rounded px-3 py-4" style="width:90%">
+            <div class="fw-bold">Favourite Currencies Comparison</div>
+            <div class="d-flex justify-content-start align-items-centert">
+                <div class="col-6 border shadow rounded my-2" id="comparisonByFavChart"></div>
+                <div class='col-5 border rounded px-3 py-3 shadow my-2 mx-3' id="comparison_fav_table" style="margin-bottom: 15px;display:none; font-size:14px">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Currency</th>
+                            <th>Historical Rate</th>
+                            <th>Current Rate</th>
+                            <th>Changes</th>
+                        </tr>
+                        </thead>
+                        <tbody id="comparison_fav_table_body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -146,7 +168,7 @@ function convertObjectToList(objects){
     var data = objects;
     var currency = Object.keys(data)[0];
 
-    var result = Object.entries(data[currency]).map(([date, value]) => [date, value]);
+    var result = Object.entries(data[currency]).map(([date, value]) => [date, value.toFixed(3)]);
     return result;
 }
 
@@ -173,6 +195,31 @@ function modifyComparisonByPopularTable(response, baseCur){
         $('#comparison_popular_table_body').append(newRow);
     });
 }
+
+function modifyComparisonByFavTable(response, baseCur){
+    $('#comparison_fav_table').show();
+    $('#comparison_fav_table_body').empty();
+    $.each(response, function(index, item) {
+        var newRow = $('<tr>');
+        var currency = $('<td>').text(baseCur + " / " + item.currency);
+        var exchangeRate = $('<td>').text(item.exchange_rate.toFixed(3)).addClass('fw-bold text-center');
+        var historicalRate = $('<td>').text(item.historical_rate.toFixed(3)).addClass('fw-bold text-center');
+        if (item.changes>0)
+            var changes = $('<td>').text('+' + item.changes.toFixed(3) + '%').addClass('fw-bold text-center').attr('style','color:green');
+        else if(item.changes<0)
+            var changes = $('<td>').text(item.changes.toFixed(3) + '%').addClass('fw-bold text-center').attr('style','color:red');
+        else
+            var changes = $('<td>').text(item.changes.toFixed(3) + '%').addClass('fw-bold text-center');
+
+        newRow.append(currency);
+        newRow.append(historicalRate);
+        newRow.append(exchangeRate);
+        newRow.append(changes);
+
+        $('#comparison_fav_table_body').append(newRow);
+    });
+}
+
 
 $(document).ready(function () {
     //Define line chart customizations
@@ -226,7 +273,7 @@ $(document).ready(function () {
         },
         yaxis:{
             labels: {
-                show: false,
+                show: true,
             }
         },
         grid: {
@@ -314,6 +361,9 @@ $(document).ready(function () {
     var compare_by_popular_chart = new ApexCharts(document.querySelector("#comparisonByPopularChart"), barChartOptions);
     compare_by_popular_chart.render();
 
+    var compare_by_fav_chart = new ApexCharts(document.querySelector("#comparisonByFavChart"), barChartOptions);
+    compare_by_fav_chart.render();
+
 
     //Customize currency selection field
     function currencySelectionOption(option) {
@@ -371,7 +421,7 @@ $(document).ready(function () {
         data: latestExRateFormData,
         success: function (response){
             console.log(response);
-            $("#latest_rate").text(response.exchange_rate);
+            $("#latest_rate").text(response.exchange_rate.toFixed(3));
             $(".updated_date").text(response.updated_date + "\n (" + response.updated_time + ") ");
             $(".currency_pair").text("("+ from_cur + " / " + to_cur +")")
         },
@@ -503,6 +553,153 @@ $(document).ready(function () {
             console.error(xhr.responseText);
         },
     });
+
+    var favCurs = {{ fav_curs | tojson }};
+    $.ajax({
+        url: "/currency/comparison",
+        type: "POST",
+        contentType: 'application/json',
+        data: JSON.stringify({
+            base_cur: fromCur,
+            compare_curs: favCurs,
+            duration : '7d'
+        }),
+        success: function (response) {
+            console.log(response);
+            modifyComparisonByFavTable(response, fromCur)
+            var currencies = response.map(item => item.currency);
+            var changes = response.map(item => item.changes.toFixed(3));
+
+            compare_by_fav_chart.updateSeries([{
+                name: "ExRate Changes based on " + fromCur,
+                data: changes
+            }]);
+            compare_by_fav_chart.updateOptions({
+                title:{
+                    text: 'Exchange Rate Changes based on ' + fromCur + ' (7 Days)',
+                },
+                xaxis: {    
+                    categories: currencies
+                }
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error(xhr.responseText);
+        },
+    });
+
+    
+    $('#to_cur, #from_cur, #duration').change(function() {
+        var latestExRateFormData = {
+            'from_cur': $('#from_cur').val(),
+            'to_cur': $('#to_cur').val()
+        };
+        var historicalFormData = {
+            'from_cur': $('#from_cur').val(),
+            'to_cur': $('#to_cur').val(),
+            'duration': '7d'
+        };
+
+        $.ajax({
+            url: "/currency/latest-exrate",
+            type: "POST",
+            dataType: 'json',
+            data: latestExRateFormData,
+            success: function (response){
+                console.log(response);
+                $("#latest_rate").text(response.exchange_rate.toFixed(3));
+                $(".updated_date").text(response.updated_date + "\n (" + response.updated_time + ") ");
+                $(".currency_pair").text("("+ from_cur + " / " + to_cur +")")
+            },
+            error:function (xhr, status, error) {
+                console.error(xhr.responseText);
+            },
+        });
+        $.ajax({
+            url: "/currency/historical-exrate",
+            type: "POST",
+            dataType: 'json',
+            data: historicalFormData,
+            success: function (response) {
+                console.log(response);
+                fillExRateChanges(response.changes);
+                const exchange_chart_data = convertObjectToList(response.results)    
+                exchange_chart.updateSeries([{
+                    name: $("#from_cur").val() + " / " + $("#to_cur").val() + " Exchange Rate:",
+                    data: exchange_chart_data
+                }])
+                exchange_chart.updateOptions({
+                    title: {
+                        text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical Exchange Rates (7 Days)",
+                    }
+                })
+            },
+            error: function (xhr, status, error) {
+                console.error(xhr.responseText);
+            },
+        });
+        $.ajax({
+            url: "/currency/historical-rsi",
+            type: "POST",
+            data: historicalFormData,
+            success: function (response) {
+                console.log(response);
+                fillRSIChanges(response.changes)
+                var rsi_values = response.rsi_values;
+                var dates = response.dates;
+    
+                latest_rsi = rsi_values[rsi_values.length - 1]
+                $("#latest_rsi").text(latest_rsi.toFixed(1)) 
+    
+                var rsi_chart_data = rsi_values.map(function(value, index) {
+                    return [dates[index], value.toFixed(1)];
+                });
+    
+                rsi_chart.updateSeries([{
+                    name: $("#from_cur").val() + " / " + $("#to_cur").val() + " RSI Value: ",
+                    data: rsi_chart_data
+                }])
+                rsi_chart.updateOptions({
+                    title: {
+                        text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical RSI Values (7 Days)",
+                    },
+                    annotations: {
+                        yaxis: [
+                            {
+                                y: 70,
+                                strokeDashArray: 1,
+                                borderColor: 'black',
+                                label: {
+                                    borderColor: 'black',
+                                    style: {
+                                        color: '#fff',
+                                        background: 'black'
+                                    },
+                                    text: 'Overbought'
+                                }
+                            },
+                            {
+                                y: 30,
+                                strokeDashArray: 1,
+                                borderColor: 'black',
+                                label: {
+                                    borderColor: 'black',
+                                    style: {
+                                        color: '#fff',
+                                        background: 'black'
+                                    },
+                                    text: 'Oversold'
+                                }
+                            },
+                            ]
+                        }
+                })
+            },
+            error: function (xhr, status, error) {
+                console.error(xhr.responseText);
+            },
+        });
+    })
 });
     
 </script>

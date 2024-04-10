@@ -17,7 +17,7 @@ currency_bp = Blueprint('currency', __name__, template_folder='templates')
 @login_required
 def convert():
     from_cur=current_user.default_cur
-    to_cur='USD'
+    to_cur=current_user.second_cur
     currencies = Currency.query.all()
         
     return render_template('convert.html', user=current_user, currencies=currencies, from_cur=from_cur, to_cur=to_cur, csrf_token = generate_csrf())
@@ -27,7 +27,7 @@ def convert():
 def historical_exchange_rate():
     currencies = Currency.query.all()
     from_cur= current_user.default_cur
-    to_cur='USD'
+    to_cur=current_user.second_cur
     
     return render_template('historical_exchange_rate.html', csrf_exrate_token = generate_csrf(), csrf_notification_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
 
@@ -36,7 +36,7 @@ def historical_exchange_rate():
 def historical_rsi_value():
     currencies = Currency.query.all()
     from_cur = current_user.default_cur
-    to_cur='USD'
+    to_cur=current_user.second_cur
 
     return render_template('historical_rsi_value.html', csrf_rsi_token = generate_csrf(), csrf_notification_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
 
@@ -45,21 +45,31 @@ def historical_rsi_value():
 def currency_comparison():
     currencies = Currency.query.all()
     base_cur = current_user.default_cur
-    compare_curs = current_app.config["POPULAR_CURRENCIES"]
-    if base_cur in compare_curs:
-        compare_curs.remove(base_cur)
+    popular_curs = current_app.config["POPULAR_CURRENCIES"]
+
+    fav_curs = None
+    if current_user.fav_curs:
+        fav_curs = current_user.fav_curs.split(',')
+        if base_cur in fav_curs:
+            fav_curs.remove(base_cur)
+
+    if base_cur in popular_curs:
+        popular_curs.remove(base_cur)
+
+
     
-    return render_template('currency_comparison.html', csrf_token = generate_csrf(), currencies=currencies, base_cur=base_cur, compare_curs=compare_curs)
+    return render_template('currency_comparison.html', csrf_token = generate_csrf(), currencies=currencies, base_cur=base_cur, popular_curs=popular_curs, fav_curs=fav_curs)
 
 @currency_bp.route('/correlation-analysis', methods=['GET'])
 @login_required
 def currency_correlation_analysis():
     currencies = Currency.query.all()
-    input_curs=[]
-    input_curs.append(current_user.default_cur)
-    input_curs.append('USD')
+    popular_curs = current_app.config["POPULAR_CURRENCIES"]
+    fav_curs = None
+    if current_user.fav_curs:
+        fav_curs = current_user.fav_curs.split(',')
     
-    return render_template('currency_correlation.html', csrf_token = generate_csrf(), currencies=currencies, input_curs=input_curs)
+    return render_template('currency_correlation.html', csrf_token = generate_csrf(), currencies=currencies, popular_curs=popular_curs, fav_curs=fav_curs)
 
 @currency_bp.route('/latest-exrate', methods=['POST'])
 @login_required

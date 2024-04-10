@@ -10,9 +10,11 @@ class User(db.Model, UserMixin):
     first_name =  db.Column(db.String(150))
     last_name =  db.Column(db.String(150))
     picture_url = db.Column(db.String(255))
+    fav_curs = db.Column(db.String(255))
     nationality = db.Column(db.String(3), db.ForeignKey('country.code'), nullable=True)
     default_cur = db.Column(db.String(3), db.ForeignKey('currency.code'), nullable=True)
     second_cur = db.Column(db.String(3), db.ForeignKey('currency.code'), nullable=True)
 
-    currency = relationship('Currency', backref='users')
+    currency = relationship('Currency', foreign_keys=[default_cur], backref='users_default', uselist=False)
+    second_currency = relationship('Currency', foreign_keys=[second_cur], backref='users_second', uselist=False)
     country = relationship('Country', backref='users')

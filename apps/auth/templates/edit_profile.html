@@ -93,7 +93,7 @@
         </div>
 
         <div class="form-group mb-3 col-10 mx-auto">
-            <label for="default_cur" class="form-label">Default Currency</label> 
+            <label for="default_cur" class="form-label">Default Currency <span class="required-field"></label> 
             <select class="form-select" id="default_cur" name="default_cur">
                 <option value="" disabled selected>Select an currency...</option>
                 {% for currency in currencies %}
@@ -109,6 +109,54 @@
                 {% endfor %}
             </select>
         </div>
+
+        <div class="form-group mb-3 col-10 mx-auto">
+          <label for="second_cur" class="form-label">Second Currency <span class="required-field"></label> 
+          <select class="form-select" id="second_cur" name="second_cur">
+            <option value="" disabled selected>Select an currency...</option>
+            {% for currency in currencies %}
+              {% if current_user.second_cur == currency.code%}
+              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" selected>
+                  {{ currency.code }} - {{ currency.name }}
+              </option>
+              {% else %}
+              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
+                  {{ currency.code }} - {{ currency.name }}
+              </option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <div class="form-text text-muted">
+            Second currency will be auto-filled with your default currency when pages load.
+          </div>
+        </div>
+
+        <div class="form-group mb-3 col-10 mx-auto">
+          <label for="fav_curs" class="form-label">Favourite Currencies</label> 
+          <select class="form-select" id="fav_curs" name="fav_curs" multiple="multiple">
+            {% for currency in currencies %}
+              {% if current_user.fav_curs and currency.code in current_user.fav_curs %}
+              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" selected>
+                  {{ currency.code }} - {{ currency.name }}
+              </option>
+              {% else %}
+              <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}">
+                  {{ currency.code }} - {{ currency.name }}
+              </option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <div class="form-text text-muted">
+            Favourite currencies can be useful for quick comparison  <br>(Choices of more than 3 currencies are recommended).
+          </div>
+          {% if form.errors.get('fav_curs') %}
+          <div class="text-danger small"> 
+            {{ form.errors.get('fav_curs')[0] }}
+          </div>
+          {% endif %}
+        </div>
+
+
         
         <div class="mb-3 col-10 mx-auto">
           {% with messages = get_flashed_messages(with_categories=true) %} {% if
@@ -162,6 +210,22 @@
         placeholder: "Select a country...",
         theme: 'bootstrap-5',
         width: '100%',        
+      });
+
+      $('#second_cur').select2({
+        placeholder: "Select an currency...",
+        theme: 'bootstrap-5',
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        width: '100%',
+      });
+  
+      $('#fav_curs').select2({
+        placeholder: "Select currencies...",
+        theme: 'bootstrap-5',
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        width: '100%',
       });
     });
 </script>

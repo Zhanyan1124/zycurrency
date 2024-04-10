@@ -40,29 +40,34 @@
                 </div>
                 <div class="col-3">
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="selection" id="popular_curs" value="popular_curs" checked>
+                        <input class="form-check-input" type="radio" name="selection" class="selection" id="popular_curs" value="popular_curs" checked>
                         <label class="form-check-label" for="popular_curs">
                             By Popular Currencies
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="selection" id="fav_curs" value="fav_curs">
+                        {% if fav_curs and fav_curs | length > 1 %}
+                            <input class="form-check-input" type="radio" name="selection" class="selection" id="fav_curs" value="fav_curs">
+                        {% else %}
+                            <input class="form-check-input" type="radio" name="selection" class="selection" id="fav_curs" value="fav_curs" disabled>
+                        {% endif %}
                         <label class="form-check-label" for="fav_curs">
                             By Favourite Currencies
                         </label>
+
                     </div>
                 </div>
             </div>
             <span class="mb-2">Select COMPARING Currency: </span>
             <div class="container p-0">
                 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4 align-items-center" id='comparing_currencies_section'>
-                    {% for compare_cur in compare_curs %}
+                    {% for popular_cur in popular_curs %}
                     <div class="form-group col">
                         <div class="d-flex align-items-center">
                             <select class="form-select compare_cur" name="compare_cur">
                                 {% for currency in currencies %}
                                     <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
-                                        {% if compare_cur and compare_cur == currency.code %}
+                                        {% if popular_cur == currency.code %}
                                             selected
                                         {% endif %}
                                     >
@@ -77,42 +82,40 @@
                 </div>
             </div>
             <div class="btn btn-primary rounded-pill px-4 py-2" style="margin-bottom: 25px" id="add_button"><i class="fa-solid fa-plus mr-2"></i> Add</div>
-
-            <div class='d-flex w-100 justify-content-between  align-items-center'>
-                <div class='d-flex flex-column col-6'>            
-                    <div class="form-group col-5" style="margin-bottom: 15px">
-                        <label for="duration" class="form-label">Duration </label>
-                        <select id="duration" name="duration" class="form-select">
-                            <option value="1d">One Day</option>
-                            <option value="7d" selected>One Week</option>
-                            <option value="14d">Two Weeks</option>
-                            <option value="1m">One Month</option>
-                            <option value="3m">Three Months</option>
-                            <option value="6m">Six Months</option>
-                            <option value="1y">One Year</option>
-                            <option value="2y">Two Years</option>
-                            <option value="1h" disabled>Last Hour (Not Supported)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group w-100 border rounded px-3 py-3 shadow" id="comparison_table" style="margin-bottom: 15px;display:none; font-size:14px">
-                        <table class="table">
-                            <thead>
-                            <tr>
-                                <th>Currency</th>
-                                <th>Historical Rate</th>
-                                <th>Current Rate</th>
-                                <th>Changes</th>
-                            </tr>
-                            </thead>
-                            <tbody id="comparison_table_body">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="col-6" id="barChart"></div>
+            <div class="form-group col-4" style="margin-bottom: 15px">
+                <label for="duration" class="form-label">Duration </label>
+                <select id="duration" name="duration" class="form-select">
+                    <option value="1d">One Day</option>
+                    <option value="7d" selected>One Week</option>
+                    <option value="14d">Two Weeks</option>
+                    <option value="1m">One Month</option>
+                    <option value="3m">Three Months</option>
+                    <option value="6m">Six Months</option>
+                    <option value="1y">One Year</option>
+                    <option value="2y">Two Years</option>
+                    <option value="1h" disabled>Last Hour (Not Supported)</option>
+                </select>
             </div>
         </form>
+
+        <div class='d-flex w-100 justify-content-between  align-items-start'>
+            <div class="col-6 border bg-white rounded px-3 py-3 " id="barChart" style="margin-right:10px"></div>         
+            <div class="form-group w-100 border rounded px-3 py-3 " id="comparison_table" style="margin-bottom: 15px;display:none; font-size:14px">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Currency</th>
+                        <th>Historical Rate</th>
+                        <th>Current Rate</th>
+                        <th>Changes</th>
+                    </tr>
+                    </thead>
+                    <tbody id="comparison_table_body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
 
 
 
@@ -120,7 +123,88 @@
 </div>
 
 <script>
+//Customize currency selection field
+function currencySelectionOption(option) {
+    if (!option.id) {
+        return option.text;
+    }
 
+    var imageUrl = $(option.element).data("image");
+    if (!imageUrl) {
+        return option.text;
+    }
+
+    return $(
+    '<span><img src="' +
+        imageUrl +
+        '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' +
+        option.text +
+        "</span>"
+    );
+}
+
+//Define chart customizations
+var options = {
+    chart: {
+        height: "100%",
+        width: "100%",
+        type: "bar",
+    },
+    series: [],
+    noData: {
+        text: 'Requesting Data...'
+    },                    
+    plotOptions: {
+        bar: {
+            borderRadius: 10,
+            distributed: true,
+            dataLabels: {
+                position: 'top',
+            },
+        }
+    },
+    dataLabels: {
+        enabled: true,
+        formatter: function (val) {
+            return val + "%";
+        },
+        style: {
+            fontSize: '12px',
+            colors: ["#304758"]
+        }
+    },
+    yaxis: {
+        labels: {
+            show: false,
+            formatter: function (val) {
+                return val + "%";
+            }
+        },
+        axisBorder: {
+            show: false
+        },
+        axisTicks: {
+            show: false,
+        },
+    },
+    xaxis:{
+        axisBorder: {
+            show: false
+        },
+        axisTicks: {
+            show: false
+        },
+    },
+    title: {
+        floating: true,
+        align: 'center',
+        style: {
+            color: '#444'
+        }
+    },
+}
+
+//Update data onto table after getting response from ajax
 function modifyTable(response){
     $('#comparison_table').show();
     $('#comparison_table_body').empty();
@@ -146,67 +230,46 @@ function modifyTable(response){
     });
 }
 
+//Update currency selection when user choose to use popular currencies or favourite currencies
+function modifyCurrencySelection(compare_curs){
+    $.each(compare_curs, function(index, compare_cur) {
+        var $newCompareCurDiv = $('<div>').addClass('form-group col');
+        var $layoutDiv = $('<div>').addClass('d-flex align-items-center');
+
+        var $select = $('<select>').addClass('form-select compare_cur').attr('name', 'compare_cur');
+        var $defaultOption = $('<option>').attr('value', '').attr('disabled', 'disabled').attr('selected', 'selected').text('Select Currency ...');
+
+        $select.append($defaultOption);
+            
+        {% for currency in currencies %}
+            var $option = $('<option>').attr('value', '{{ currency.code }}').attr('data-image', '{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}').text('{{ currency.code }} - {{ currency.name }}');
+            if (compare_cur === '{{ currency.code }}') {
+                $option.prop('selected', true);
+            }
+            $select.append($option);
+        {% endfor %} 
+        
+        var $removeIcon = $('<i>').addClass('fa-solid fa-minus clickable-icon').attr('style','color:#ff0000;margin-left:5px')
+
+        $layoutDiv.append($select);
+        $layoutDiv.append($removeIcon);
+
+        $newCompareCurDiv.append($layoutDiv);
+
+        $('#comparing_currencies_section').append($newCompareCurDiv);
+    });
+    $('.compare_cur').select2({
+        placeholder: 'Select currency...',
+        theme: "bootstrap-5",
+        templateResult: currencySelectionOption,
+        templateSelection: currencySelectionOption,
+        width: "100%",
+    });
+    $('#get_comparison_form').submit();
+}
+
 $(document).ready(function () {
-    //Define chart customizations
-    var options = {
-        chart: {
-            height: "100%",
-            width: "100%",
-            type: "bar",
-        },
-        series: [],
-        noData: {
-            text: 'Requesting Data...'
-        },                    
-        plotOptions: {
-            bar: {
-                borderRadius: 10,
-                distributed: true,
-                dataLabels: {
-                    position: 'top',
-                },
-            }
-        },
-        dataLabels: {
-            enabled: true,
-            formatter: function (val) {
-                return val + "%";
-            },
-            style: {
-                fontSize: '12px',
-                colors: ["#304758"]
-            }
-        },
-        yaxis: {
-            labels: {
-                show: false,
-                formatter: function (val) {
-                    return val + "%";
-                }
-            },
-            axisBorder: {
-                show: false
-            },
-            axisTicks: {
-                show: false,
-            },
-        },
-        xaxis:{
-            axisBorder: {
-                show: false
-            },
-            axisTicks: {
-                show: false
-            },
-        },
-        title: {
-            floating: true,
-            align: 'center',
-            style: {
-                color: '#444'
-            }
-        },
-    }
+
     var chart = new ApexCharts(document.querySelector("#barChart"), options);
     chart.render();
 
@@ -250,27 +313,6 @@ $(document).ready(function () {
         },
     });
     
-
-    //Customize currency selection field
-    function currencySelectionOption(option) {
-        if (!option.id) {
-            return option.text;
-        }
-
-        var imageUrl = $(option.element).data("image");
-        if (!imageUrl) {
-            return option.text;
-        }
-
-        return $(
-        '<span><img src="' +
-            imageUrl +
-            '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' +
-            option.text +
-            "</span>"
-        );
-    }
-
     //Use Select2 package to define the select inputs
     $("#base_cur").select2({
         theme: "bootstrap-5",
@@ -332,7 +374,23 @@ $(document).ready(function () {
         selectInput.val(null);
         $(this).closest('.form-group').remove();
         $('#base_cur').change();
+        $('input[name="selection"]').prop('checked', false);
     });
+
+    //Automatic currencies selection when radio buttion is checked 
+    $(document).on('change', '#popular_curs, #fav_curs',function(){
+        $('#comparing_currencies_section').empty();
+        if ($(this).val() == "popular_curs" && $(this).prop('checked')){
+            var popular_curs = {{ popular_curs | tojson }};
+            modifyCurrencySelection(popular_curs)
+        }
+
+        else if ($(this).val() == "fav_curs" && $(this).prop('checked')){
+            var fav_curs = {{ fav_curs | tojson }};
+            modifyCurrencySelection(fav_curs)
+        }
+
+    })
 
     //Uncheck the Currency Selection Radio Button when currency changes
     $(document).on('change', '.compare_cur', function(){

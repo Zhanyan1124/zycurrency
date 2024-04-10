@@ -46,16 +46,12 @@ def signup():
     form = SignUpForm()
     currencies = Currency.query.all()
     countries = Country.query.all()
+    fav_curs_codes = [currency.code for currency in form.fav_curs.data] if form.fav_curs.data else None
     try:
         if request.method == 'POST' and form.validate_on_submit():
-
-
             existing_user = User.query.filter_by(email=form.email.data).first()
             if existing_user:
                 raise EmailExistedException('This email address is already registered.')
-            
-            hashed_password = generate_password_hash(form.password.data, method='scrypt')
-            
             
             if form.profile_picture.data:
                 profile_picture = form.profile_picture.data
@@ -64,25 +60,28 @@ def signup():
                 file_path = os.path.join(folder_path, filename)
                 profile_picture.save(file_path)
                 picture_url = 'user_pics/' + filename
-      
             else:
                 picture_url = None
             
-            if form.default_cur.data:
-                default_cur = form.default_cur.data.code
+            
+            default_cur = form.default_cur.data.code
+            if form.second_cur.data:
+                second_cur = form.second_cur.data.code
+                if default_cur == second_cur: 
+                    raise Exception("Default currency cannot be the same with your second currency")
             else:
-                default_cur = None
-            if form.nationality.data:
-                nationality= form.nationality.data.code
-            else:
-                nationality= None
+                if default_cur!= "USD":
+                    second_cur = "USD"
+                else:
+                    second_cur = "EUR"
 
-            if form.last_name.data:
-                last_name = form.last_name.data
-            else:
-                last_name = None
-
-            new_user = User(email=form.email.data, password=hashed_password, first_name = form.first_name.data, last_name = last_name, default_cur = default_cur, nationality = nationality, picture_url=picture_url)
+            email = form.email.data
+            hashed_password = generate_password_hash(form.password.data, method='scrypt')
+            first_name = form.first_name.data
+            nationality = form.nationality.data.code if form.nationality.data else None
+            last_name = form.last_name.data if form.last_name.data else None
+            fav_curs = ','.join(currency.code for currency in form.fav_curs.data) if form.fav_curs.data else None
+            new_user = User(email=email, password=hashed_password, first_name = first_name, last_name = last_name, default_cur = default_cur, second_cur = second_cur, fav_curs = fav_curs, nationality = nationality, picture_url=picture_url)
             db.session.add(new_user)
             db.session.commit()
             # msg = Message("Activate ur account on ZyCurrency", 
@@ -103,7 +102,7 @@ def signup():
     except Exception as e:
         flash(f'Error during sign up: {str(e)}', 'danger')
 
-    return render_template('sign_up.html', form=form, currencies=currencies, countries=countries)
+    return render_template('sign_up.html', form=form, currencies=currencies, countries=countries, fav_curs_codes = fav_curs_codes)
 
 @auth_bp.route('/forget-password', methods=['GET', 'POST'])
 def forget_password():
@@ -161,19 +160,14 @@ def edit_profile():
 
     try:
         if request.method == 'POST' and form.validate_on_submit():
-            
-            if form.default_cur.data:
-                default_cur = form.default_cur.data.code
-            else:
-                default_cur = None
-            if form.nationality.data:
-                nationality= form.nationality.data.code
-            else:
-                nationality= None
-            if form.last_name.data:
-                last_name = form.last_name.data
-            else:
-                last_name = None
+            first_name = form.first_name.data
+            nationality = form.nationality.data.code if form.nationality.data else None
+            last_name = form.last_name.data if form.last_name.data else None
+            default_cur = form.default_cur.data.code if form.default_cur.data else None
+            second_cur = form.second_cur.data.code if form.second_cur.data else None
+            if default_cur == second_cur:
+                raise Exception("Default currency cannot be the same with your second currency") 
+            fav_curs = ','.join(currency.code for currency in form.fav_curs.data) if form.fav_curs.data else None
             
             if form.profile_picture.data:
                 profile_picture = form.profile_picture.data
@@ -187,6 +181,8 @@ def edit_profile():
             current_user.last_name = last_name
             current_user.nationality = nationality
             current_user.default_cur = default_cur
+            current_user.second_cur = second_cur
+            current_user.fav_curs = fav_curs
 
             db.session.commit()
 

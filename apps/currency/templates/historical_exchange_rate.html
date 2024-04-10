@@ -235,6 +235,10 @@
         console.log(response);
         fillExRateChanges(response.changes)
         const chart_data = convertObjectToList(response.results)
+        const latest_rate = chart_data[chart_data.length-1][1];
+        $('#current_rate').text(latest_rate.toFixed(4));
+        $('#current_rate_section').show();
+
         chart.updateSeries([{
           name: $("#from_cur").val() + " / " + $("#to_cur").val() + " Exchange Rate:",
           data: chart_data
@@ -338,9 +342,12 @@
         data: formData,
         success: function (response) {
           console.log(response);
-          fillExRateChanges(response.changes)
-          const chart_data = convertObjectToList(response.results)
-          
+          fillExRateChanges(response.changes);
+          const chart_data = convertObjectToList(response.results);
+          const latest_rate = chart_data[chart_data.length-1][1];
+          $('#current_rate').text(latest_rate.toFixed(4));
+          $('#current_rate_section').show();
+
           chart.updateSeries([{
             name: $("#from_cur").val() + " / " + $("#to_cur").val() + " Exchange Rate:",
             data: chart_data
