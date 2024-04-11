@@ -1,10 +1,11 @@
-<div class="modal fade notification-modal" id="notification-modal" tabindex="-1" role="dialog" aria-labelledby="notification-modal" aria-hidden="true" data-backdrop="true">
+<div class="modal fade alert-modal" id="alert-modal" tabindex="-1" role="dialog" aria-labelledby="alert-modal" aria-hidden="true" data-backdrop="true">
     <div class="modal-dialog modal-dialog-centered model-sm" role="document">
     <div class="modal-content">
-        <form method="POST"  action="/notification/create" id="create_notification_form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_notification_token }}">
+        <form method="POST"  action="/alert/create" id="create_alert_form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_alert_token }}">
         <input name='from_cur' type='hidden' id='from_cur_input'> </input>
         <input name='to_cur' type='hidden' id='to_cur_input'> </input>
+        <input name='indicator' type='hidden' value="rsi"> </input>
         <div class="modal-header">
             <div class='row justify-content-between align-items-center w-100' style="height: 40px">
             <div class="col-6 text-center">
@@ -18,14 +19,14 @@
             </div>
         </div>
         <div class="modal-body">
-            <div class="d-flex flex-column justify-content-center align-items-start px-3" id='notification_setting'>
+            <div class="d-flex flex-column justify-content-center align-items-start px-3" id='alert_setting'>
             <div class='row w-100 align-items-center justify-content-start' id='period_options'>
                 <label for="period" class="col-2 form-label fw-bold">Period:</label>
                 <div class="col-5"> 
                     <select id="period" name="period" class="form-select">
-                        <option value='day'>Each Day</option>
-                        <option value='week'>Each Week</option>
-                        <option value='month'>Each Month</option>
+                        <option value='daily'>Each Day</option>
+                        <option value='weekly'>Each Week</option>
+                        <option value='monthly'>Each Month</option>
                     </select>
                 </div>
                 <div class='w-100 mb-4'>
@@ -63,7 +64,7 @@
                         <option value='more'>More Than</option>
                         <option value='less'>Less Than</option>
                     </select>
-                    <input type="text" class="form-control form-control" id="rsi_value" name='rsi_value' placeholder="" style="width:80px" >
+                    <input type="text" class="form-control form-control" id="rsi_val" name='rsi_val' placeholder="" style="width:80px" >
                 </div>
             </div>
             <div class='row w-100 align-items-center justify-content-start mb-3' >
@@ -96,7 +97,7 @@
         </div>
 
         <div class="modal-footer d-flex justify-content-center">
-            <button type="submit" value="notification_form" name="submit_notification" class="btn btn-sm btn-primary mx-2 px-4">Set</button>
+            <button type="submit" value="alert_form" name="submit_alert" class="btn btn-sm btn-primary mx-2 px-4">Set</button>
             <button type="button" class="btn btn-sm btn-secondary mx-2 px-3" data-dismiss="modal">Close</button>
         </div>
         </form>
@@ -107,20 +108,18 @@
 <script>
 $(document).ready(function() {
     $(document).on('change', '#overbought, #oversold',function(){
-        console.log('wtf')
         if ($(this).val() == "overbought" && $(this).prop('checked')){
             $("#condition option[value='more']").prop('selected', true)
-            $("#rsi_value").val("70")
+            $("#rsi_val").val("70")
         }
 
         else if ($(this).val() == "oversold" && $(this).prop('checked')){
             $("#condition option[value='less']").prop('selected', true)
-            $("#rsi_value").val("30")
+            $("#rsi_val").val("30")
         }
-
     })
 
-    $(document).on('change', '#condition, #rsi_value', function(){
+    $(document).on('change', '#condition, #rsi_val', function(){
         $('input[name="selection"]').prop('checked', false);
     })
 
@@ -133,54 +132,59 @@ $(document).ready(function() {
     $('#to_cur_input').val(to_cur);
     
     $("input[name='alert_type']").change(function(){
-    if ($("#periodically").is(":checked")) {
-        $("#period_options").show();
-        $("#condition_options").hide();
-    } else {
-        $("#period_options").hide();
-        $("#condition_options").show();
-    }
+        if ($("#periodically").is(":checked")) {
+            $("#period_options").show();
+            $("#condition_options").hide();
+        } else {
+            $("#period_options").hide();
+            $("#condition_options").show();
+        }
     });
 
     $("#from_cur, #to_cur").change(function(){
-    var from_cur = $('#from_cur').val();
-    var to_cur = $('#to_cur').val();
-    $("#condition_label").text("RSI Value (" + from_cur + '/' + to_cur + '): ');
-    $('#from_cur_input').val(from_cur);
-    $('#to_cur_input').val(to_cur);
+        var from_cur = $('#from_cur').val();
+        var to_cur = $('#to_cur').val();
+        $("#condition_label").text("RSI Value (" + from_cur + '/' + to_cur + '): ');
+        $('#from_cur_input').val(from_cur);
+        $('#to_cur_input').val(to_cur);
     });
     
-    $('#create_notification_form').submit(function(event) {
-    event.preventDefault();
+    $('#create_alert_form').submit(function(event) {
+        event.preventDefault();
 
-    var formData = $(this).serialize();
+        if ((($("#condition").val() == "more" &&  $("#current_rsi").text() > $("#rsi_val").val()) || 
+            ($("#condition").val() == "less" && $("#current_rsi").text() < $("#rsi_val").val()))) {
+            $("#errorMessage").text('The condition had already been met');
+            $("#errorMessage").show();
+        }
+        else{
+            var formData = $(this).serialize();
 
-    $.ajax({
-        url: '/notifications/create',
-        type: 'POST',
-        data: formData,
-        success: function(response) {
-            $('#successMessage').text(response.message);
-            $('#successMessage').show();
-            $('#errorMessage').hide();
-            console.log(response);
-        },
-        error: function(xhr, status, error) {
-            $('#errorMessage').text(xhr.responseJSON.error);
-            $('#errorMessage').show();
-            $('#successMessage').hide();
-            console.error(xhr.responseText);
+            $.ajax({
+                url: '/alert/create',
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    $('#successMessage').text(response.message);
+                    $('#successMessage').show();
+                    $('#errorMessage').hide();
+                    console.log(response);
+                },
+                error: function(xhr, status, error) {
+                    $('#errorMessage').text(xhr.responseJSON.error);
+                    $('#errorMessage').show();
+                    $('#successMessage').hide();
+                    console.error(xhr.responseText);
+                }
+            });
         }
     });
+
+    $('#alert-modal').on('hidden.bs.modal', function () {
+        $('#errorMessage').text('');
+        $('#errorMessage').hide();
+        $('#successMessage').text('');
+        $('#successMessage').hide();
     });
-
-    $('#notification-modal').on('hidden.bs.modal', function () {
-    $('#errorMessage').text('');
-    $('#errorMessage').hide();
-    $('#successMessage').text('');
-    $('#successMessage').hide();
-    });
-
-
 })
 </script>

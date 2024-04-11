@@ -1,0 +1,151 @@
+{% extends 'sidebar.html' %} {% block content %}
+<div class="container-fluid">
+  <h3 class="text-start" style="margin-bottom: 25px">Alerts Setting</h3>
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+    {% if alerts.count() == 0 %}
+      <div class="d-flex flex-column justify-content-center align-items-center w-100" style="margin-top:15%">
+        <div class="mb-2"><i class="fa-solid fa-bell fa-2xl" style="color: #cccccc;"></i></div>
+        <div style="color: #cccccc;">You haven't created any alerts yet</div>
+        <div style="color: #cccccc;">You can create an alert at exchange rate section and rsi value section.</div>
+      </div>
+    {% endif %}
+
+    {% for alert in alerts %}
+    <div class="col">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span style="font-size:0.9rem">{% if alert.indicator == 'rsi'%} RSI Value {%elif alert.indicator == "exrate"%}Exchange Rate {%endif%}</span>
+          <span style="font-size:0.8rem; text-transform: capitalize; color:#4562FB; font-weight:bold">{{alert.alert_type}}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-title d-flex align-items-center justify-content-between">
+            <div class="d-flex justify-content-start align-items-center">
+              Alert #{{ loop.index }}
+              <div class="form-check form-switch mx-3">
+                <input class="form-check-input clickable-icon toggle_alert" type="checkbox" role="switch" data-alert-id="{{ alert.id }}" {% if alert.is_enabled %} checked {% endif %}>
+              </div>
+            </div>
+            <div class="d-flex justify-content-end align-items-center">
+              <i class="fa-solid fa-wrench clickable-icon" style='padding-right:15px;'></i>
+              <i class="fa-solid fa-trash clickable-icon delete_alert" style="color: #fa0000;" data-alert-id="{{ alert.id }}"></i>
+            </div>
+          </div>
+          {% if alert.alert_type == 'periodically'%}
+          <p class="card-text" >Period: <span style='text-transform:capitalize; font-size:0.95rem' class="fw-bold px-1">{{alert.period}}</span></p>
+          {% else %}
+          <p class="card-text">Threshold: 
+            <span class='fw-bold px-2' style='font-size:0.99rem'> 
+              {% if alert.condition == 'more'%}
+                More Than
+              {% else %}
+                Less Than
+              {% endif %}
+              {% if alert.indicator == 'exrate'%}
+                {{alert.rate}}
+              {% elif alert.indicator == 'rsi'%}
+                {{alert.rsi_val}}
+              {% endif %}
+            </span>
+          </p>
+          {% endif %}
+
+          <div class="d-flex justify-content-start align-items-center mb-3">
+            <img src="{{ url_for('static', filename='flags/' + alert.from_cur.alpha_2_code.lower() + '.png') }}" class="img-flag" style="width:25px;height:15px;margin-right:5px"/>
+            {{alert.from_cur.code}}
+            <i class="fa-solid fa-arrow-right mx-3"></i>
+            <img src="{{ url_for('static', filename='flags/' + alert.to_cur.alpha_2_code.lower() + '.png') }}" class="img-flag" style="width:25px;height:15px;margin-right:5px"/>
+            {{alert.to_cur.code}}
+          </div>
+
+          <div class='d-flex flex-column align-items-start justify-content-center'>
+            <label for="notes" class="form-label">Notes:</label>
+            <div class="d-flex align-items-center w-100">
+              <div class="col-10"> 
+                <textarea class="form-control form-control-sm" id="notes_{{alert.id}}" name="notes" rows="5" placeholder="Type something here..." disabled>{{alert.notes}}</textarea>
+              </div>
+              <div class="col-1">
+                <i class="fa-solid fa-pencil clickable-icon mx-2 edit_notes" data-id="{{ alert.id }}" id="edit_icon_{{alert.id}}"></i>
+                <i class="fa-solid fa-floppy-disk clickable-icon mx-2 save_notes" data-id="{{ alert.id }}" id="save_icon_{{alert.id}}" style="display: none;"></i>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {% endfor %}      
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    $('.delete_alert').click(function() {
+      var alertId = $(this).data('alert-id'); 
+      var $card = $(this).closest('.card');
+      $.ajax({
+          url: '/alert/delete/' + alertId, 
+          type: 'DELETE',
+          success: function(response) {
+            $card.remove();
+            location.reload();
+            alert(response.message);
+            console.log(response);
+          },
+          error: function(xhr, status, error) {
+            alert('Error: ' + xhr.responseText);
+            console.error(xhr.responseText);
+          }
+      });
+    });
+
+    $('.toggle_alert').change(function() {
+      var alertId = $(this).data('alert-id'); 
+      $.ajax({
+          url: '/alert/toggle/' + alertId, 
+          type: 'PUT',
+          success: function(response) {
+            console.log(response);
+          },
+          error: function(xhr, status, error) {
+            console.error(xhr.responseText);
+          }
+      });
+    });
+
+    $('.edit_notes').click(function() {
+      var notesId = $(this).data('id');
+      var $notes = $('#notes_' + notesId);
+      $notes.prop('disabled', false);
+      $notes.focus();
+      var $saveIcon = $('#save_icon_'+notesId)
+      $saveIcon.show();
+      $(this).hide();
+    });
+
+    
+    $('.save_notes').click(function() {
+      var notesId = $(this).data('id');
+      var $notes = $('#notes_' + notesId);
+      $notes.prop('disabled', true);
+      var $editIcon = $('#edit_icon_'+notesId)
+      $editIcon.show();
+      $(this).hide();
+      
+      var notesContent = $notes.val(); 
+      $.ajax({
+        url: '/alert/edit-notes/' + notesId, 
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ notes: notesContent }),
+        success: function(response) {
+          console.log(response);
+        },
+        error: function(xhr, status, error) {
+          console.error(xhr.responseText);
+        }
+    });
+
+    });
+  });
+</script>
+{% endblock %}

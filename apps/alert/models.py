@@ -1,13 +1,16 @@
 from apps import db
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy import Enum
 
-class Notification(db.Model):
+class Alert(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    alert_type = db.Column(db.String(13), nullable = False)
-    period = db.Column(db.String(5))
-    condition = db.Column(db.String(4))
+    alert_type = db.Column(Enum('periodically', 'conditionally', name='indicator_enum'))
+    indicator = db.Column(Enum('exrate', 'rsi', name='indicator_enum'))
+    period = db.Column(Enum('daily', 'weekly', 'monthly', name='period_enum'))  
+    condition = db.Column(Enum('more', 'less', name='condition_enum'))
     rate = db.Column(db.Float)
+    rsi_val = db.Column(db.Float)
     notify_in_app = db.Column(db.Boolean)
     notify_email = db.Column(db.Boolean)
     notes = db.Column(db.String(255))

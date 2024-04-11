@@ -1,10 +1,11 @@
-<div class="modal fade notification-modal" id="notification-modal" tabindex="-1" role="dialog" aria-labelledby="notification-modal" aria-hidden="true" data-backdrop="true">
+<div class="modal fade alert-modal" id="alert-modal" tabindex="-1" role="dialog" aria-labelledby="alert-modal" aria-hidden="true" data-backdrop="true">
   <div class="modal-dialog modal-dialog-centered model-sm" role="document">
     <div class="modal-content">
-      <form method="POST"  action="/notification/create" id="create_notification_form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_notification_token }}">
+      <form method="POST"  action="/alert/create" id="create_alert_form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_alert_token }}">
         <input name='from_cur' type='hidden' id='from_cur_input'> </input>
         <input name='to_cur' type='hidden' id='to_cur_input'> </input>
+        <input name='indicator' type='hidden' value="exrate"> </input>
         <div class="modal-header">
           <div class='row justify-content-between align-items-center w-100' style="height: 40px">
             <div class="col-6 text-center">
@@ -18,14 +19,14 @@
           </div>
         </div>
         <div class="modal-body">
-          <div class="d-flex flex-column justify-content-center align-items-start px-3" id='notification_setting'>
+          <div class="d-flex flex-column justify-content-center align-items-start px-3" id='alert_setting'>
             <div class='row w-100 align-items-center justify-content-start' id='period_options'>
               <label for="period" class="col-2 form-label fw-bold">Period:</label>
               <div class="col-5"> 
                   <select id="period" name="period" class="form-select">
-                      <option value='day'>Each Day</option>
-                      <option value='week'>Each Week</option>
-                      <option value='month'>Each Month</option>
+                      <option value='daily'>Each Day</option>
+                      <option value='weekly'>Each Week</option>
+                      <option value='monthly'>Each Month</option>
                   </select>
               </div>
               <div class='w-100 mb-4'>
@@ -82,7 +83,7 @@
         </div>
 
         <div class="modal-footer d-flex justify-content-center">
-          <button type="submit" value="notification_form" name="submit_notification" class="btn btn-sm btn-primary mx-2 px-4">Set</button>
+          <button type="submit" value="alert_form" name="submit_alert" class="btn btn-sm btn-primary mx-2 px-4">Set</button>
           <button type="button" class="btn btn-sm btn-secondary mx-2 px-3" data-dismiss="modal">Close</button>
         </div>
       </form>
@@ -118,13 +119,13 @@ $(document).ready(function() {
     $('#to_cur_input').val(to_cur);
   });
   
-  $('#create_notification_form').submit(function(event) {
+  $('#create_alert_form').submit(function(event) {
     event.preventDefault();
 
     var formData = $(this).serialize();
 
     $.ajax({
-        url: '/notifications/create',
+        url: '/alert/create',
         type: 'POST',
         data: formData,
         success: function(response) {
@@ -142,7 +143,7 @@ $(document).ready(function() {
     });
   });
 
-  $('#notification-modal').on('hidden.bs.modal', function () {
+  $('#alert-modal').on('hidden.bs.modal', function () {
     $('#errorMessage').text('');
     $('#errorMessage').hide();
     $('#successMessage').text('');

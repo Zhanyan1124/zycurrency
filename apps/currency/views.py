@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import requests
 from apps.models import Currency
-from apps.notification.models import Notification
+from apps.alert.models import Alert
 from .exceptions import DataMissingException
 from apps import db
 import json
@@ -29,7 +29,7 @@ def historical_exchange_rate():
     from_cur= current_user.default_cur
     to_cur=current_user.second_cur
     
-    return render_template('historical_exchange_rate.html', csrf_exrate_token = generate_csrf(), csrf_notification_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
+    return render_template('historical_exchange_rate.html', csrf_exrate_token = generate_csrf(), csrf_alert_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
 
 @currency_bp.route('/historical-rsi', methods=['GET'])
 @login_required
@@ -38,7 +38,7 @@ def historical_rsi_value():
     from_cur = current_user.default_cur
     to_cur=current_user.second_cur
 
-    return render_template('historical_rsi_value.html', csrf_rsi_token = generate_csrf(), csrf_notification_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
+    return render_template('historical_rsi_value.html', csrf_rsi_token = generate_csrf(), csrf_alert_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
 
 @currency_bp.route('/comparison', methods=['GET'])
 @login_required
