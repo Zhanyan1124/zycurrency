@@ -2,6 +2,7 @@ from flask import Blueprint, request, current_app, jsonify, render_template
 import requests
 from flask_login import login_required, current_user
 from apps.alert.models import Alert
+from apps.models import Currency
 from apps import db
 from .exceptions import DataMissingException
 
@@ -65,7 +66,8 @@ def create_alert():
 @login_required
 def view_alerts():
     alerts = Alert.query.filter_by(user_id=current_user.id)
-    return render_template('view_alerts.html', alerts = alerts)
+    currencies = Currency.query.all()
+    return render_template('view_alerts.html', alerts = alerts, currencies = currencies)
 
 @alert_bp.route('/delete/<id>', methods=['DELETE'])
 @login_required
@@ -104,10 +106,24 @@ def edit_alert(id):
     alert = Alert.query.get(id)
     if alert:
         if alert.user_id != current_user.id:
-            return jsonify({'error': 'Not authorized to delete this alert'}), 403
+            return jsonify({'error': 'Not authorized to edit this alert'}), 403
         
+        if alert.alert_type=="periodically":
+            period = request.json.get('period')
+            alert.period = period
+        else:
+            condition = request.json.get('condition')
+            alert.condition = condition
+            if alert.indicator=="exrate":
+                rate = request.json.get('value')
+                alert.rate = rate
+
+            elif alert.indicator=="rsi":
+                rsi_val = request.json.get('value')
+                alert.rsi_val = rsi_val
+
         db.session.commit()
-        return jsonify({'message': 'Alert disabled successfully'}), 200
+        return jsonify({'message': 'Alert edited successfully'}), 200
     
     else:
         return jsonify({'error': 'Alert not found'}), 404

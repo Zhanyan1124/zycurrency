@@ -1,0 +1,77 @@
+<div
+    class="modal fade profile-modal"
+    id="profile-modal"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="profile-modal"
+    aria-hidden="true"
+    data-backdrop="false"
+>
+    <div class="modal-dialog model-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="col text-center">
+                {% if current_user.picture_url %} {% if
+                current_user.picture_url.startswith('user_pics') %}
+                <img
+                    src="{{ url_for('static', filename=current_user.picture_url) }} "
+                    alt="{{ current_user.first_name }} {{ current_user.last_name }}"
+                    class="border rounded-circle"
+                    style="width: 70px; height: 70px"
+                />
+                {% else %}
+                <img
+                    src="{{ current_user.picture_url }}"
+                    alt="{{ current_user.first_name }} {{ current_user.last_name }}"
+                    class="border rounded-circle"
+                    style="width: 70px; height: 70px"
+                />
+                {% endif %} {% else %}
+                <i
+                    class="fa-solid fa-user fa-2xl align-self-center border rounded-circle mx-10"
+                    style="
+                    padding-top: 30px;
+                    width: 70px;
+                    height: 70px;
+                    color: #fffafa;
+                    background-color: #787878;
+                    "
+                ></i>
+                {% endif %}
+                <br />
+                <div style="padding-top: 10px">
+                    <span class="fw-bold">
+                    {{ current_user.first_name }} {% if current_user.last_name %} {{
+                    current_user.last_name }} {% endif %}</span
+                    ><br />
+                    <span> {{ current_user.email}} </span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div
+            class="d-flex flex-column justify-content-center align-items-start"
+            >
+            <a href="/auth/edit-profile" class="profile-link">
+                <i class="fa-solid fa-pencil"></i>
+                <span>Edit Profile</span>
+            </a>
+            <a href="/auth/change-password" class="profile-link">
+                <i class="fa-solid fa-wrench"></i>
+                {% if current_user.password %}
+                <span>Change Password</span>
+                {% else %}
+                <span>Add Password</span>
+                {% endif %}
+            </a>
+            </div>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-center">
+            <button type="button" class="btn btn-sm btn-dark" data-dismiss="modal">
+            Close
+            </button>
+        </div>
+        </div>
+    </div>
+</div>

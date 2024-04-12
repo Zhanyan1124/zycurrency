@@ -44,6 +44,8 @@ def create_app():
     app.register_blueprint(currency_bp, url_prefix='/currency')
     from apps.alert.views import alert_bp
     app.register_blueprint(alert_bp, url_prefix='/alert')
+    from apps.notification.views import notification_bp
+    app.register_blueprint(notification_bp, url_prefix='/notification')
     
     from apps.auth.models import User
     from apps.models import Country, Currency

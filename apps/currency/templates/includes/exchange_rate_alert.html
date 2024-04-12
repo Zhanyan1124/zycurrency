@@ -121,26 +121,32 @@ $(document).ready(function() {
   
   $('#create_alert_form').submit(function(event) {
     event.preventDefault();
-
-    var formData = $(this).serialize();
-
-    $.ajax({
-        url: '/alert/create',
-        type: 'POST',
-        data: formData,
-        success: function(response) {
-          $('#successMessage').text(response.message);
-          $('#successMessage').show();
-          $('#errorMessage').hide();
-          console.log(response);
-        },
-        error: function(xhr, status, error) {
-          $('#errorMessage').text(xhr.responseJSON.error);
-          $('#errorMessage').show();
-          $('#successMessage').hide();
-          console.error(xhr.responseText);
-        }
-    });
+    
+    if ((($('#alert_type').val()=="conditionally") && ($("#condition").val() == "more" &&  $("#current_rate").text() > $("#rate").val()) || 
+        ($("#condition").val() == "less" && $("#current_rate").text() < $("#rate").val()))) {
+        $("#errorMessage").text('The condition had already been met');
+        $("#errorMessage").show();
+    }
+    else{
+      var formData = $(this).serialize();
+      $.ajax({
+          url: '/alert/create',
+          type: 'POST',
+          data: formData,
+          success: function(response) {
+            $('#successMessage').text(response.message);
+            $('#successMessage').show();
+            $('#errorMessage').hide();
+            console.log(response);
+          },
+          error: function(xhr, status, error) {
+            $('#errorMessage').text(xhr.responseJSON.error);
+            $('#errorMessage').show();
+            $('#successMessage').hide();
+            console.error(xhr.responseText);
+          }
+      });
+    }
   });
 
   $('#alert-modal').on('hidden.bs.modal', function () {

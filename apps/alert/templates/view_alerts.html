@@ -26,21 +26,23 @@
               </div>
             </div>
             <div class="d-flex justify-content-end align-items-center">
-              <i class="fa-solid fa-wrench clickable-icon" style='padding-right:15px;'></i>
+              <i class="fa-solid fa-wrench clickable-icon" style='padding-right:15px;' data-toggle="modal" data-target="#alert-modal" 
+              onclick="openAlertModal('{{alert.id}}', '{{ loop.index }}', '{{ alert.indicator }}', '{{ alert.alert_type }}','{{alert.from_cur.code}}', '{{alert.from_cur.alpha_2_code.lower()}}', '{{alert.to_cur.code}}', '{{alert.to_cur.alpha_2_code.lower()}}','{{alert.period}}', '{{alert.condition}}', '{{alert.rate}}', '{{alert.rsi_val}}')">
+              </i>
               <i class="fa-solid fa-trash clickable-icon delete_alert" style="color: #fa0000;" data-alert-id="{{ alert.id }}"></i>
             </div>
           </div>
           {% if alert.alert_type == 'periodically'%}
-          <p class="card-text" >Period: <span style='text-transform:capitalize; font-size:0.95rem' class="fw-bold px-1">{{alert.period}}</span></p>
+          <p class="card-text" >Period: <span style='text-transform:capitalize; font-size:0.95rem' class="fw-bold px-1" id="period_output_{{alert.id}}">{{alert.period}}</span></p>
           {% else %}
           <p class="card-text">Threshold: 
-            <span class='fw-bold px-2' style='font-size:0.99rem'> 
+            <span class='fw-bold px-2' style='font-size:0.99rem' id="condition_output_{{alert.id}}"> 
               {% if alert.condition == 'more'%}
                 More Than
               {% else %}
                 Less Than
               {% endif %}
-              {% if alert.indicator == 'exrate'%}
+              {% if alert.indicator == 'exrate' %}
                 {{alert.rate}}
               {% elif alert.indicator == 'rsi'%}
                 {{alert.rsi_val}}
@@ -50,11 +52,11 @@
           {% endif %}
 
           <div class="d-flex justify-content-start align-items-center mb-3">
-            <img src="{{ url_for('static', filename='flags/' + alert.from_cur.alpha_2_code.lower() + '.png') }}" class="img-flag" style="width:25px;height:15px;margin-right:5px"/>
-            {{alert.from_cur.code}}
+            <img src="{{ url_for('static', filename='flags/' + alert.from_cur.alpha_2_code.lower() + '.png') }}" id="from_cur_image_{{alert.id}}" class="img-flag" style="width:25px;height:15px;margin-right:5px"/>
+            <span id="from_cur_output_{{alert.id}}" >{{alert.from_cur.code}}</span>
             <i class="fa-solid fa-arrow-right mx-3"></i>
-            <img src="{{ url_for('static', filename='flags/' + alert.to_cur.alpha_2_code.lower() + '.png') }}" class="img-flag" style="width:25px;height:15px;margin-right:5px"/>
-            {{alert.to_cur.code}}
+            <img src="{{ url_for('static', filename='flags/' + alert.to_cur.alpha_2_code.lower() + '.png') }}" id="to_cur_image_{{alert.id}}" class="img-flag" style="width:25px;height:15px;margin-right:5px"/>
+            <span id="to_cur_output_{{alert.id}}" >{{alert.to_cur.code}}</span>
           </div>
 
           <div class='d-flex flex-column align-items-start justify-content-center'>
@@ -69,7 +71,6 @@
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -77,8 +78,169 @@
   </div>
 </div>
 
+<div class="modal fade alert-modal" id="alert-modal" tabindex="-1" role="dialog" aria-labelledby="alert-modal" aria-hidden="true" data-backdrop="true">
+  <div class="modal-dialog modal-dialog-centered model-sm" role="document">
+    <div class="modal-content">
+
+    </div>
+  </div>
+</div>
+
 <script>
+
+  function formatOption(option) {
+    if (!option.id) {
+        return option.text;
+    }
+
+    var imageUrl = $(option.element).data('image');
+    if (!imageUrl) {
+      return option.text;
+    }
+
+    return $('<span><img src="' + imageUrl + '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' + option.text + '</span>');
+  }
+
+
+  function openAlertModal(id, index, indicator, alertType, fromCur, fromCurAlpha2, toCur, toCurAlpha2, period, condition, rate, rsi_val) {
+    var modalContent = `
+      <div class="modal-header">
+        <span class='fw-bold'>Alert # ${index}</span>
+      </div>
+      <div class="modal-body">
+        <div class='text-start'>
+          <span>Currencies</span> 
+        </div>
+        <div class='d-flex align-items-center justify-content-start mb-3'>
+            <img src="/static/flags/${fromCurAlpha2}.png" class="img-flag" style="width:25px;height:15px;margin-right:5px"/>
+            <span>${fromCur}</span>
+            <i class="fa-solid fa-arrow-right mx-3"></i>
+            <img src="/static/flags/${toCurAlpha2}.png" class="img-flag" style="width:25px;height:15px;margin-right:5px"/>
+            <span>${toCur}</span>
+        </div>
+        <input type="hidden" id="alert_type" name="alert_type" value="${alertType}" />`
+      ;
+    if (alertType == "periodically"){
+      modalContent+=`
+      <div class='row w-100 align-items-center justify-content-start mb-3' id='period_options'>
+        <label for="period" class="col-2 form-label">Period:</label>
+        <div class="col-5"> 
+            <select id="period" name="period" class="form-select">
+                <option value='daily'>Each Day</option>
+                <option value='weekly'>Each Week</option>
+                <option value='monthly'>Each Month</option>
+            </select>
+        </div>
+      </div>`;
+    }
+    else{
+      modalContent+=`
+      <input type="hidden" name="indicator" id="indicator" value="${indicator}" />
+        <div class="my-2">
+          <div class='text-start'>
+            <span>Condition `;
+      if(indicator == 'exrate'){
+        modalContent+=`(Exchange Rate)</span>        
+          </div>
+          <div class='text-start' style="font-size:0.9rem;display:none;" id="current_rate_section">
+            Current rate = <span class='fw-bold' id='current_rate'></span> 
+          </div>
+        </div>`;
+      }
+      else if(indicator == 'rsi'){
+        modalContent+=`(RSI Value)</span>        
+          </div>
+          <div class='text-start' style="font-size:0.9rem;display:none;" id="current_rsi_section">
+            Current RSI value = <span class='fw-bold' id='current_rsi'></span> 
+          </div>
+        </div>`;
+      }
+
+      modalContent+=`
+      <div class='d-flex w-100 justify-content-start align-items-center mb-3'>
+        <select id="condition" name="condition" class="form-select" style="width:150px">
+            <option value='more'>More Than</option>
+            <option value='less'>Less Than</option>
+        </select>
+        <input type="text" class="form-control mx-3" id="value" name='value' placeholder="Rate" style="width:80px">
+      </div>
+      `;
+    }
+
+    modalContent+=`
+          <div class="alert alert-danger w-100" role="alert" id="errorMessage" style="display:none;"> </div>
+          <div class="alert alert-success w-100" role="alert" id="successMessage" style="display:none;"> </div>
+      </div>
+
+      <div class="modal-footer d-flex justify-content-center">
+        <button type="button"  class="btn btn-sm btn-primary mx-2 px-4 update_alert" data-id="${id}">Save</button>
+        <button type="button" class="btn btn-sm btn-secondary mx-2 px-3" data-dismiss="modal">Close</button>
+      </div>
+    `;
+    
+    $('#alert-modal .modal-content').html(modalContent);
+    $('#alert-modal').modal('show');
+
+
+    if (alertType == 'periodically'){
+      $('#period option[value="' + period+ '"]').prop('selected', true)
+    }
+    if (alertType == 'conditionally'){
+      $('#condition option[value="' + condition+ '"]').prop('selected', true)
+      if (indicator == 'exrate'){
+        $('#value').val(rate)
+      }
+      else{
+        $('#value').val(rsi_val)
+      }
+    }
+
+    var latestExRateFormData = {
+        'from_cur': fromCur,
+        'to_cur': toCur,
+    };
+    $.ajax({
+      url: "/currency/latest-exrate",
+      type: "POST",
+      dataType: 'json',
+      data: latestExRateFormData,
+      success: function (response){
+          console.log(response);
+          $("#current_rate").text(response.exchange_rate.toFixed(3));
+          $("#current_rate_section").show();
+      },
+      error:function (xhr, status, error) {
+          console.error(xhr.responseText);
+      },
+    });
+
+    var latestRSIFormData = {
+      'from_cur': fromCur,
+      'to_cur': toCur,
+      'duration': '1d',
+    };
+
+    $.ajax({
+      url: "/currency/historical-rsi",
+      type: "POST",
+      data: latestRSIFormData,
+      success: function (response) {
+          console.log(response);
+          rsi_values = response.rsi_values
+          $("#current_rsi").text(rsi_values[rsi_values.length - 1].toFixed(1)) 
+          $("#current_rsi_section").show()
+      },
+      error: function (xhr, status, error) {
+          console.error(xhr.responseText);
+      },
+  });
+
+
+
+  }
+
   $(document).ready(function() {
+
     $('.delete_alert').click(function() {
       var alertId = $(this).data('alert-id'); 
       var $card = $(this).closest('.card');
@@ -112,6 +274,63 @@
       });
     });
 
+    $(document).on('click','.update_alert',function(){
+      var alertId = $(this).data('id');
+      var period = $('#period').val();
+      var condition = $('#condition').val();
+      var value = $('#value').val();
+
+      var validRequest = true;
+      if ($('#alert_type').val() == 'conditionally'){
+        if ( $('#indicator').val() == 'exrate'){
+          if (((condition== "more" &&  $("#current_rate").text() > value) || 
+            (condition== "less" && $("#current_rate").text() < value))) {
+            $("#errorMessage").text('The condition had already been met');
+            $("#errorMessage").show();
+            validRequest = false;
+          }
+        } 
+        else if ( $('#indicator').val() == 'rsi'){
+          if (((condition == "more" &&  $("#current_rsi").text() > value) || 
+          (condition == "less" && $("#current_rsi").text() < value))) {
+          $("#errorMessage").text('The condition had already been met');
+          $("#errorMessage").show();
+          validRequest = false;
+        }
+        }
+      }
+
+      if (validRequest){
+        $.ajax({
+          url: '/alert/edit/' + alertId, 
+          type: 'PUT',
+          contentType: 'application/json',
+          data: JSON.stringify({ 
+            period: period,
+            condition: condition,
+            value: value,
+          }),
+          success: function(response) {
+            console.log(response);
+            $('#errorMessage').hide()
+            $('#successMessage').text("The alert setting has been updated successfully")
+            $('#successMessage').show()
+          },
+          error: function(xhr, status, error) {
+            console.error(xhr.responseText);
+            $('#successMessage').hide()
+            $('#errorMessage').text(xhr.responseText)
+            $('#errorMessage').show()
+          }
+        })
+      }
+    })
+
+    $('#alert-modal').on('hidden.bs.modal', function () {
+        location.reload();
+    });
+
+
     $('.edit_notes').click(function() {
       var notesId = $(this).data('id');
       var $notes = $('#notes_' + notesId);
@@ -143,9 +362,9 @@
         error: function(xhr, status, error) {
           console.error(xhr.responseText);
         }
-    });
+      });
+    })
 
-    });
   });
 </script>
 {% endblock %}

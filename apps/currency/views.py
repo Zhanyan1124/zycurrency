@@ -110,7 +110,6 @@ def retrieve_latest_rate():
         print(str(e))
         return jsonify({'error': str(e)}), 400
 
-
 @currency_bp.route('/convert', methods=['POST'])
 @login_required
 def retrieve_convertion():
