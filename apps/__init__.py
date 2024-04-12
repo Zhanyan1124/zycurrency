@@ -50,6 +50,7 @@ def create_app():
     from apps.auth.models import User
     from apps.models import Country, Currency
     from apps.alert.models import Alert
+    from apps.notification.models import Notification
     with app.app_context():
         db.create_all()
         print('Connected to Database')

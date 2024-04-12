@@ -15,14 +15,17 @@
                     <span aria-hidden="true"><i class="fa-solid fa-xmark"></i></span>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="d-flex flex-column justify-content-center align-items-center w-100 px-3" style="margin-top:15%; margin-bottom:15%">
-                    <div class="mb-2"><i class="fa-solid fa-bell fa-2xl" style="color: #cccccc;"></i></div>
-                    <div style="color: #cccccc;" class="mb-1">You don't have any notifications yet.</div>
-                    <div style="color: #cccccc;" class="text-center">Try to set an alert to receive <br>notifications in future.</div>
+            <div class="modal-body p-0">
+                <div id="notifications_section" class='w-100' style="display:none">
+                </div>
+                <div id="empty_notifications">
+                    <div class="d-flex flex-column justify-content-center align-items-center w-100 px-3"  style="margin-top:15%; margin-bottom:15%; ">
+                        <div class="mb-2"><i class="fa-solid fa-bell fa-2xl" style="color: #cccccc;"></i></div>
+                        <div style="color: #cccccc;" class="mb-1">You don't have any notifications yet.</div>
+                        <div style="color: #cccccc;" class="text-center">Try to set an alert to receive <br>notifications in future.</div>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>

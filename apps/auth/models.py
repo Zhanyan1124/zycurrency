@@ -14,7 +14,7 @@ class User(db.Model, UserMixin):
     nationality = db.Column(db.String(3), db.ForeignKey('country.code'), nullable=True)
     default_cur = db.Column(db.String(3), db.ForeignKey('currency.code'), nullable=True)
     second_cur = db.Column(db.String(3), db.ForeignKey('currency.code'), nullable=True)
-
+    
     currency = relationship('Currency', foreign_keys=[default_cur], backref='users_default', uselist=False)
     second_currency = relationship('Currency', foreign_keys=[second_cur], backref='users_second', uselist=False)
     country = relationship('Country', backref='users')

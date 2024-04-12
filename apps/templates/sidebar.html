@@ -65,7 +65,10 @@
     <div class="col" >
       <div>
         <div class="d-flex align-items-center justify-content-end p-3">
-          <i class="fa-regular fa-bell fa-xl"  style="color: #000; margin-right: 60px;" id="notification_button" data-toggle="modal" data-target="#notification-modal"></i>
+          <a id='notification_section'>
+            <i class="fa-regular fa-bell fa-xl clickable-icon" style="color:#787878" id="notification_icon" data-toggle="modal" data-target="#notification-modal"></i>
+            <span class="badge rounded-pill notification-badge bg-danger" id="notification_badge"></span>
+          </a>
 
           <div id ='user-profile' data-toggle="modal" data-target="#profile-modal" >
             {% if current_user.picture_url %}
@@ -99,6 +102,119 @@
   hamBurger.addEventListener("click", function () {
     document.querySelector("#sidebar").classList.toggle("expand");
   });
+
+  function getTimeDifference(notificationTimestamp) {
+    var currentTime = new Date();
+    var notificationTime = new Date(notificationTimestamp);
+    var difference = currentTime.getTime() - notificationTime.getTime();
+
+    var days = Math.floor(difference / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
+    var hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); // Convert remaining milliseconds to hours
+    var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)); // Convert remaining milliseconds to minutes
+
+    var timeDifference = '';
+    if (days > 0) {
+        timeDifference += days + " days ";
+    }
+    if (hours > 0) {
+        timeDifference += hours + " hours ";
+    }
+    if (minutes > 0 || (days === 0 && hours === 0)) {
+        timeDifference += minutes + " mins";
+    }
+
+    return timeDifference.trim(); // Return formatted time difference
+  };
+
+  function showNotifications(unreadCount, notifications){
+    $('#notifications_section').empty();
+    if (unreadCount>0){
+      $('#notification_icon').removeClass('fa-regular')
+      $('#notification_icon').addClass('fa-solid')
+      $("#notification_icon").css("color", "#4562FB");
+      $('#notification_badge').text(unreadCount);
+    }
+    if (notifications.length > 0){
+      $('#empty_notifications').hide()
+      $.each(notifications, function(index, notification) {
+        var backgroundColor = notification.has_read ? '' : 'background-color:#e6f6fa';
+        var notificationHTML = `
+            <div class="d-flex justify-content-start align-items-center py-2 px-3 border-bottom" style='${backgroundColor}'>
+                <img src="{{ url_for('static', filename='images/favicon.ico')}}" alt="Sender: Zycurrency" class="border rounded" style="width: 50px; height:50px;margin-right:20px"/>
+                <div class="d-flex flex-column justify-content-center align-items-start w-100">
+                    <div class="fw-bold">${notification.title}</div>  
+                    <div style='font-size:0.85rem'>${notification.text}</div>
+                    <div style='font-size:0.75rem'> <small>${getTimeDifference(notification.created_time)} ago</small></div>
+                </div>
+            </div>
+        `;
+        $("#notifications_section").append(notificationHTML);
+      });
+    }
+    $('#notifications_section').show();
+  }
+
+
+  $(document).ready(function () {
+    var notifications;
+    $.ajax({
+      url: '/notification/get-all', 
+      type: 'GET',
+      success: function(response) {
+        console.log(response);
+        notifications = response.notifications;
+        var unreadCount = response.unread_count;
+        showNotifications(unreadCount, notifications);
+      },
+      error: function(xhr, status, error) {
+        console.error(xhr.responseText);
+      }
+    });
+
+  $('#notification-modal').on('show.bs.modal', function (e) {
+    $('#notification_icon').removeClass('fa-regular').addClass('fa-solid');
+    $('#notification_icon').css('color', 'black');
+    $('#notification_badge').text('');
+    var notificationIds = [];
+    if (notifications.length > 0) {
+        $.each(notifications, function(index, notification) {
+            notificationIds.push(notification.id);
+        });
+    }
+    $.ajax({
+      url: '/notification/read-all', 
+      type: 'PUT',
+      contentType: 'application/json',
+      data: JSON.stringify({ ids: notificationIds }),
+      success: function(response) {
+        console.log(response);
+      },
+      error: function(xhr, status, error) {
+        console.error(xhr.responseText);
+      }
+    });
+  });
+
+  $('#notification-modal').on('hide.bs.modal', function (e) {
+    $('#notification_icon').removeClass('fa-solid').addClass('fa-regular');
+    $('#notification_icon').css('color', '#787878');
+    $.ajax({
+      url: '/notification/get-all', 
+      type: 'GET',
+      success: function(response) {
+        console.log(response);
+        notifications = response.notifications;
+        var unreadCount = response.unread_count;
+        showNotifications(unreadCount, notifications);
+      },
+      error: function(xhr, status, error) {
+        console.error(xhr.responseText);
+      }
+    });
+  });
+
+
+  })
 </script>
 
 {% endblock %}
