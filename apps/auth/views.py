@@ -10,7 +10,8 @@ import json
 from oauthlib.oauth2 import WebApplicationClient
 from flask_mail import Message
 from werkzeug.utils import secure_filename
-from apps import db,mail 
+from apps.database import db
+from apps import mail
 from apps.models import Currency, Country
 from .tasks import send_reset_password_mail
 

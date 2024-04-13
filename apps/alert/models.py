@@ -1,4 +1,4 @@
-from apps import db
+from apps.database import db
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy import Enum

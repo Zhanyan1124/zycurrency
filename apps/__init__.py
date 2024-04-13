@@ -7,12 +7,15 @@ from flask_mail import Mail
 from config import Config
 from .utils import celery_init_app
 from itsdangerous import URLSafeTimedSerializer
+from flask_apscheduler import APScheduler
 
-db = SQLAlchemy()
+from .database import db
+
+
 migrate = Migrate()
 seeder = FlaskSeeder()
 mail = Mail()
-
+scheduler = APScheduler()
 
 def create_app():
     app = Flask(__name__)
@@ -21,6 +24,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     seeder.init_app(app, db)
+    scheduler.init_app(app)
 
     mail.init_app(app)
 
@@ -55,13 +59,23 @@ def create_app():
         db.create_all()
         print('Connected to Database')
 
+
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
 
-    
+    from apps.alert.tasks import periodically_currency_update, alert_condition_check
+    scheduler.add_job(func=periodically_currency_update, args=(app,'daily'), trigger='cron', day_of_week='*', hour='8', minute='0', id='daily_currency_update')
+    scheduler.add_job(func=periodically_currency_update, args=(app,'weekly'), trigger='cron', day_of_week='MON', hour='8', minute='0', id='weekly_currency_update')
+    scheduler.add_job(func=periodically_currency_update, args=(app,'monthly'), trigger='cron', month='*', day=1, hour='8', minute='0', id='monthly_currency_update')
+
+    scheduler.add_job(func=alert_condition_check, args=(app,), trigger='interval', seconds=60, id='alert_condition_check')
+
+    scheduler.start()
+
+
     @login_manager.user_loader
     def load_user(id):
         return User.query.get(int(id))
 
-    return app
+    return app, scheduler

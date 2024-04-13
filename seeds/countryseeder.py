@@ -1,6 +1,6 @@
 from flask_seeder import Seeder
 from apps.models import Country, Currency
-from apps import db
+from apps.database import db
 import pycountry 
 from countryinfo import CountryInfo
 

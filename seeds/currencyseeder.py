@@ -1,6 +1,6 @@
 from flask_seeder import Seeder
 from apps.models import Currency
-from apps import db
+from apps.database import db
 from flask import current_app 
 import json
 import requests

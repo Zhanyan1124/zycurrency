@@ -4,11 +4,12 @@ from flask_wtf.csrf import generate_csrf
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from .utils import get_latest_rate, get_rsi_value
 import requests
 from apps.models import Currency
 from apps.alert.models import Alert
 from .exceptions import DataMissingException
-from apps import db
+from apps.database import db
 import json
 
 currency_bp = Blueprint('currency', __name__, template_folder='templates')
@@ -72,7 +73,6 @@ def currency_correlation_analysis():
     return render_template('currency_correlation.html', csrf_token = generate_csrf(), currencies=currencies, popular_curs=popular_curs, fav_curs=fav_curs)
 
 @currency_bp.route('/latest-exrate', methods=['POST'])
-@login_required
 def retrieve_latest_rate():
     try:
         from_cur = request.form.get('from_cur')
@@ -81,10 +81,7 @@ def retrieve_latest_rate():
         if from_cur is None or to_cur is None:
             raise DataMissingException('Select currency to proceed')
 
-        headers = {"accept": "application/json"}
-        exrate_url = "{}/fetch-one?api_key={}&from={}&to={}".format(current_app.config['FAST_FOREX_API_URL'], current_app.config['FAST_FOREX_API_KEY'], from_cur, to_cur)
-        response = requests.get(exrate_url, headers=headers)
-
+        response = get_latest_rate(from_cur, to_cur)
         if response.status_code == 200:
             json_obj = response.json()
             print(json_obj)  
@@ -209,79 +206,19 @@ def retrieve_historical_rsi_values():
         from_cur = request.form.get('from_cur')
         to_cur = request.form.get('to_cur')
         duration=request.form.get('duration')
-        end_date = datetime.now()
+
         if from_cur is None or to_cur is None:
             raise DataMissingException('Select currency to proceed')
         if duration is None:
             raise DataMissingException('Select duration to proceed')
 
-        if duration.endswith('d'):   
-            start_date = end_date - timedelta(days=int(duration[:-1]))
-        elif duration.endswith('m'):   
-            start_date = end_date - relativedelta(months=int(duration[:-1]))
-        elif duration.endswith('y'):    
-            start_date = end_date - relativedelta(years=int(duration[:-1]))
-        start_date = start_date - timedelta(days=14)
-        print(end_date)
-        print(start_date)
-        headers = {"accept": "application/json"}
-        response=None
-    
-        # If currency for current date is not updated, thus need to use the previous date as latest currency
-        while not response or 'future' in response.text:
-            time_series_url = "{}/time-series?api_key={}&from={}&to={}&start={}&end={}".format(current_app.config['FAST_FOREX_API_URL'], current_app.config['FAST_FOREX_API_KEY'], from_cur, to_cur, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
-            response = requests.get(time_series_url, headers=headers)
-            if response.status_code == 200:
-                json_obj = response.json()  
-                results= json_obj['results']
-                dates =  list(list(results.values())[0].keys())
-                exchange_rates = list(list(results.values())[0].values())
-
-                print("Dates:", list(dates))
-                print("Exchange Rates:", list(exchange_rates))
-
-                changes = []
-                for i in range(1, len(exchange_rates)):
-                    if exchange_rates[i] - exchange_rates[i - 1] != 0:
-                        change = (exchange_rates[i] - exchange_rates[i - 1])/exchange_rates[i-1] * 100
-                    else:
-                        change = 0
-                    changes.append(change)
-                print("Changes:", list(changes))
-                rsi_values = []
-                for i in range(14, len(changes)+1):
-                    gain = 0
-                    loss = 0
-                    for j in range(i-14, i):
-                        if  changes[j] > 0:
-                            gain += changes[j]
-                        else:
-                            loss -= changes[j]
-                    average_gain = gain / 14
-                    average_loss = loss / 14
-                    relative_strength = average_gain/average_loss
-                    rsi = 100-(100/(1+relative_strength))
-                    print('Avg gain for '+ str(i) + ': ' + str(average_gain))
-                    print('Avg loss for '+ str(i) + ': ' + str(average_loss))
-                    print('RS for '+ str(i)  + ': ' + str(relative_strength))
-                    print('RSI for '+ str(i)  + ': ' + str(rsi))
-                    rsi_values.append(rsi)
-                changes = round(rsi_values[-1] - rsi_values[0] / rsi_values[0] * 100,4)
-                dates = dates[14:]
-                rounded_rsi_values = [round(rsi, 1) for rsi in rsi_values]
-                print("Dates:", list(dates))
-                print("RSI Values:", list(rsi_values))
-
-                data = {
-                    "dates": dates,
-                    "rsi_values": rsi_values,
-                    "changes" : changes
-                }
-                return jsonify(data), 200
-            else:
-                if 'future' in response.text:
-                    end_date = end_date - timedelta(days=1)
-                print(f"Error: {response.status_code} - {response.text}")
+        changes, dates, rsi_values = get_rsi_value(from_cur, to_cur, duration)
+        data = {
+            "dates": dates,
+            "rsi_values": rsi_values,
+            "changes" : changes
+        }
+        return jsonify(data), 200
     
     except DataMissingException as e:
         print(str(e))

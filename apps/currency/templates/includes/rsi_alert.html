@@ -152,7 +152,7 @@ $(document).ready(function() {
     $('#create_alert_form').submit(function(event) {
         event.preventDefault();
 
-        if ((($("#condition").val() == "more" &&  $("#current_rsi").text() > $("#rsi_val").val()) || 
+        if ((($('#alert_type').val()=="conditionally") && ($("#condition").val() == "more" &&  $("#current_rsi").text() > $("#rsi_val").val()) || 
             ($("#condition").val() == "less" && $("#current_rsi").text() < $("#rsi_val").val()))) {
             $("#errorMessage").text('The condition had already been met');
             $("#errorMessage").show();

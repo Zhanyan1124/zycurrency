@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from apps.alert.models import Alert
 from apps.models import Currency
 from apps.notification.models import Notification
-from apps import db
+from apps.database import db
 
 
 notification_bp = Blueprint('notification', __name__)
