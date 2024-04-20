@@ -1,0 +1,46 @@
+{% extends 'mail_base.html' %}
+{% block content %}
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" align="center">
+    <tbody>
+        <tr>
+            <td style="padding-top: 20px;">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <table cellpadding="0" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td align="center" valign="top"
+                                style="font-size: 18px; line-height: 21px; padding-bottom: 20px;">
+                                <h4>You just registered an account on ZyCurrency.</h4>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td align="left" valign="top"
+                                style="font-size: 17px; line-height: 21px; padding-bottom: 20px;">
+                                Kindly press the button below to verify your account. 
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="left" valign="top"
+                                style="font-size: 17px; line-height: 21px; padding-bottom: 20px;">
+                                After verifying your account, you are able to login ZyCurrency with your account email and password.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" style="padding-top: 14px;">
+                <a href="{{ verify_account_url }}"
+                    style="text-decoration: none; background: #4562FB; color: #FFFFFF;font-weight: normal;line-height: 24px; font-size: 18px; padding: 11px 25px 13px; min-width: 200px; display: inline-block; box-sizing: border-box; margin: 0 auto 40px;">
+                    Verify Account Now
+                </a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+{% endblock content %}

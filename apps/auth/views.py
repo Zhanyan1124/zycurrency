@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, abort
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from .forms import SignUpForm, LoginForm, EditProfileForm, ChangePasswordForm, ForgetPasswordForm, ResetPasswordForm
+from .forms import SignUpForm, LoginForm, EditProfileForm, ChangePasswordForm, ForgetPasswordForm, ResetPasswordForm, AddProfileForm
 from .models import User
 from .exceptions import EmailExistedException, InvalidPasswordException
 import os
@@ -10,10 +10,10 @@ import json
 from oauthlib.oauth2 import WebApplicationClient
 from flask_mail import Message
 from werkzeug.utils import secure_filename
-from apps.database import db
+from apps import db
 from apps import mail
 from apps.models import Currency, Country
-from .tasks import send_reset_password_mail
+from .tasks import send_reset_password_mail, send_verify_account_mail
 
 
 auth_bp = Blueprint('auth', __name__, template_folder='templates')
@@ -28,11 +28,14 @@ def login():
         if user and user.password is None:
             flash('This account does not have password', 'danger')
 
-        elif user and check_password_hash(user.password, form.password.data):
+        elif user and user.email_verified and check_password_hash(user.password, form.password.data):
             login_user(user)
             return redirect(url_for('views.home'))
         else:
-            flash('Invalid email or password', 'danger')
+            if user and not user.email_verified:
+                flash('This account has not been verified. Please check your inbox.', 'danger')
+            else:
+                flash('Invalid email or password', 'danger')
     return render_template('login.html', form=form)
 
 
@@ -85,13 +88,13 @@ def signup():
             new_user = User(email=email, password=hashed_password, first_name = first_name, last_name = last_name, default_cur = default_cur, second_cur = second_cur, fav_curs = fav_curs, nationality = nationality, picture_url=picture_url)
             db.session.add(new_user)
             db.session.commit()
-            # msg = Message("Activate ur account on ZyCurrency", 
-            #       sender=current_app.config["MAIL_USERNAME"], 
-            #       recipients=["zhanyan1124@gmail.com"])
-            # msg.body = "Body of the email"
-            # mail.send(msg)
-            
-            flash('Sign up successful. You may proceed to log in.', 'success')
+
+            serializer = current_app.config['SERIALIZER']
+            token = serializer.dumps(email, salt='verify-account')
+            verify_account_url = current_app.config['URL_DOMAIN_WITH_PROTOCOL'] + url_for('auth.verify_account', token=token, external=True)
+            html_template = render_template('mails/verify_account_mail.html', verify_account_url=verify_account_url)
+            send_verify_account_mail.delay(email, html_template)  
+            flash('Sign up successful. You may check your email inbox to verify your account.', 'success')
             return redirect(url_for('auth.login'))
         
         elif request.method == 'POST' and not form.validate_on_submit():
@@ -105,6 +108,27 @@ def signup():
 
     return render_template('sign_up.html', form=form, currencies=currencies, countries=countries, fav_curs_codes = fav_curs_codes)
 
+@auth_bp.route('/verify-account/<token>', methods=['GET'])
+def verify_account(token):
+    serializer = current_app.config['SERIALIZER']
+    try:
+        email = serializer.loads(token, salt='verify-account', max_age=1800)
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.email_verified = True
+            db.session.commit()
+            flash('Your account has been verified. You can proceed to log in to the system.', 'success')
+            return redirect(url_for('auth.login'))
+        else:
+            abort(404) 
+    except SignatureExpired:
+        flash('Verification link has expired. Please sign up again.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    except BadSignature:
+        abort(404) 
+
+
 @auth_bp.route('/forget-password', methods=['GET', 'POST'])
 def forget_password():
     form = ForgetPasswordForm()
@@ -114,8 +138,8 @@ def forget_password():
             email = form.email.data
             serializer = current_app.config['SERIALIZER']
             token = serializer.dumps(email, salt='reset-password')
+            
             reset_password_url = current_app.config['URL_DOMAIN_WITH_PROTOCOL'] + url_for('auth.reset_password', token=token, external=True)
-            print(reset_password_url)
             html_template = render_template('mails/reset_password_mail.html', reset_password_url=reset_password_url)
             send_reset_password_mail.delay(email, html_template)
             flash('Please check your email inbox to reset your password.', 'success')
@@ -279,7 +303,7 @@ def google_login_callback():
         return "User email not available or not verified by Google.", 500
 
     user = User(
-        first_name=first_name, last_name=last_name, email=email, picture_url= picture_url
+        first_name=first_name, last_name=last_name, email=email, picture_url= picture_url, email_verified= True
     )
     
     existing_user = User.query.filter_by(email=user.email).first()
@@ -291,7 +315,38 @@ def google_login_callback():
         user = existing_user
 
     login_user(user)
-    return redirect(url_for("views.home"))
+    return redirect(url_for("auth.add_profile"))
+
+@auth_bp.route('/add-profile', methods=['GET', 'POST'])
+def add_profile():
+    form = AddProfileForm()
+    currencies = Currency.query.all()
+    countries = Country.query.all()
+
+    try:
+        if request.method == 'POST' and form.validate_on_submit():
+            nationality = form.nationality.data.code if form.nationality.data else None
+            default_cur = form.default_cur.data.code if form.default_cur.data else None
+            second_cur = form.second_cur.data.code if form.second_cur.data else None
+            if default_cur == second_cur:
+                raise Exception("Default currency cannot be the same with your second currency") 
+            fav_curs = ','.join(currency.code for currency in form.fav_curs.data) if form.fav_curs.data else None
+            
+            current_user.nationality = nationality
+            current_user.default_cur = default_cur
+            current_user.second_cur = second_cur
+            current_user.fav_curs = fav_curs
+
+            db.session.commit()
+            return redirect(url_for("views.home"))
+        
+        elif request.method == 'POST' and not form.validate_on_submit():
+            form.populate_obj(request.form)
+    
+    except Exception as e:
+        flash(f'Error when adding profile: {str(e)}', 'danger')
+
+    return render_template('add_profile.html', form=form, current_user=current_user, currencies=currencies, countries=countries)
 
 
 def get_google_provider_cfg(url):

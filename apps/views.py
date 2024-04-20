@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, current_app
+from flask import Blueprint, render_template, current_app, redirect, url_for
 from flask_login import login_required, current_user
 from .models import Currency
 
@@ -7,6 +7,8 @@ views = Blueprint('views', __name__)
 @views.route('/')
 @login_required
 def home():
+    if not current_user.default_cur:
+        return redirect(url_for("auth.add_profile"))
     from_cur = current_user.default_cur
     to_cur=current_user.second_cur
     currencies = Currency.query.all()

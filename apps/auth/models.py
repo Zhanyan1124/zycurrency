@@ -1,4 +1,4 @@
-from apps.database import db
+from apps import db
 from flask_login import UserMixin
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
@@ -11,6 +11,7 @@ class User(db.Model, UserMixin):
     last_name =  db.Column(db.String(150))
     picture_url = db.Column(db.String(255))
     fav_curs = db.Column(db.String(255))
+    email_verified = db.Column(db.Boolean, default=False)
     nationality = db.Column(db.String(3), db.ForeignKey('country.code'), nullable=True)
     default_cur = db.Column(db.String(3), db.ForeignKey('currency.code'), nullable=True)
     second_cur = db.Column(db.String(3), db.ForeignKey('currency.code'), nullable=True)

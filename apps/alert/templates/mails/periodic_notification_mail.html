@@ -1,0 +1,45 @@
+{% extends 'mail_base.html' %}
+{% block content %}
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" align="center">
+    <tbody>
+        <tr>
+            <td>
+                <table cellpadding="0" cellspacing="0" border="0" >
+                    <tbody >
+                        <tr>
+                            <td align="center" valign="top"
+                                style="font-size: 22px; line-height: 30px; padding-bottom: 20px;">
+                                {% if indicator == "exrate" %}
+                                <h4>Today's exchange rate for {{from_cur}} to {{to_cur}}</h4>
+                                {% elif indicator == "rsi"%}
+                                <h4>Today's RSI value for {{from_cur}} to {{to_cur}}</h4>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td align="center" valign="top"
+                                style="font-size: 25px; font-weight:bold; line-height: 30px; padding-bottom: 20px;">
+                                {% if indicator == "exrate" %}
+                                    1 {{from_cur}} to {{exchange_rate}} {{to_cur}}
+                                {% elif indicator == "rsi" %}
+                                    {{latest_rsi}} 
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" style="padding-top: 14px;">
+                <a href="{{ sign_in_url }}"
+                    style="text-decoration: none; background: #4562FB; color: #FFFFFF;font-weight: normal;line-height: 24px; font-size: 18px; padding: 11px 25px 13px; min-width: 200px; display: inline-block; box-sizing: border-box; margin: 0 auto 40px;">
+                    Sign In
+                </a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+{% endblock content %}

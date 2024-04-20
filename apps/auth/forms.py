@@ -74,3 +74,10 @@ class ResetPasswordForm(FlaskForm):
         validators.DataRequired(),
         validators.EqualTo('password', message='Passwords must match')
     ])
+
+class AddProfileForm(FlaskForm):
+    nationality = QuerySelectField(query_factory=lambda: Country.query.all(), allow_blank=True, get_label="name")  
+    default_cur = QuerySelectField(query_factory=lambda: Currency.query.all(), allow_blank=False)  
+    second_cur = QuerySelectField(query_factory=lambda: Currency.query.all(), allow_blank=False) 
+    fav_curs = QuerySelectMultipleField(query_factory=lambda: Currency.query.all(), allow_blank=True)  
+    submit = SubmitField('Edit')

@@ -1,4 +1,4 @@
-from apps.database import db
+from apps import db
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 

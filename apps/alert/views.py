@@ -3,7 +3,7 @@ import requests
 from flask_login import login_required, current_user
 from apps.alert.models import Alert
 from apps.models import Currency
-from apps.database import db
+from apps import db
 from .exceptions import DataMissingException
 
 alert_bp = Blueprint('alert', __name__,  template_folder='templates')

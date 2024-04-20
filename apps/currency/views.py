@@ -9,7 +9,7 @@ import requests
 from apps.models import Currency
 from apps.alert.models import Alert
 from .exceptions import DataMissingException
-from apps.database import db
+from apps import db
 import json
 
 currency_bp = Blueprint('currency', __name__, template_folder='templates')

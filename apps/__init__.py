@@ -8,10 +8,9 @@ from config import Config
 from .utils import celery_init_app
 from itsdangerous import URLSafeTimedSerializer
 from flask_apscheduler import APScheduler
+from flask_sqlalchemy import SQLAlchemy
 
-from .database import db
-
-
+db = SQLAlchemy()
 migrate = Migrate()
 seeder = FlaskSeeder()
 mail = Mail()
@@ -69,7 +68,7 @@ def create_app():
     scheduler.add_job(func=periodically_currency_update, args=(app,'weekly'), trigger='cron', day_of_week='MON', hour='8', minute='0', id='weekly_currency_update')
     scheduler.add_job(func=periodically_currency_update, args=(app,'monthly'), trigger='cron', month='*', day=1, hour='8', minute='0', id='monthly_currency_update')
 
-    scheduler.add_job(func=alert_condition_check, args=(app,), trigger='interval', seconds=60, id='alert_condition_check')
+    scheduler.add_job(func=alert_condition_check, args=(app,), trigger='interval', seconds=1200, id='alert_condition_check')
 
     scheduler.start()
 
@@ -78,4 +77,4 @@ def create_app():
     def load_user(id):
         return User.query.get(int(id))
 
-    return app, scheduler
+    return app
