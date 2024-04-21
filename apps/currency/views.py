@@ -20,8 +20,14 @@ def convert():
     from_cur=current_user.default_cur
     to_cur=current_user.second_cur
     currencies = Currency.query.all()
-        
-    return render_template('convert.html', user=current_user, currencies=currencies, from_cur=from_cur, to_cur=to_cur, csrf_token = generate_csrf())
+    fav_currencies = [] 
+
+    if current_user.fav_curs:
+        fav_curs = current_user.fav_curs.split(',')
+        fav_currencies = [currency for currency in currencies if currency.code in fav_curs]
+        currencies = [currency for currency in currencies if currency.code not in fav_curs]
+
+    return render_template('convert.html', user=current_user, currencies=currencies, from_cur=from_cur, to_cur=to_cur, csrf_token = generate_csrf(), fav_currencies = fav_currencies)
 
 @currency_bp.route('/historical-exrate', methods=['GET'])
 @login_required
@@ -29,8 +35,15 @@ def historical_exchange_rate():
     currencies = Currency.query.all()
     from_cur= current_user.default_cur
     to_cur=current_user.second_cur
+
+    fav_currencies = [] 
+
+    if current_user.fav_curs:
+        fav_curs = current_user.fav_curs.split(',')
+        fav_currencies = [currency for currency in currencies if currency.code in fav_curs]
+        currencies = [currency for currency in currencies if currency.code not in fav_curs]
     
-    return render_template('historical_exchange_rate.html', csrf_exrate_token = generate_csrf(), csrf_alert_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
+    return render_template('historical_exchange_rate.html', csrf_exrate_token = generate_csrf(), csrf_alert_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur, fav_currencies = fav_currencies)
 
 @currency_bp.route('/historical-rsi', methods=['GET'])
 @login_required
@@ -38,8 +51,15 @@ def historical_rsi_value():
     currencies = Currency.query.all()
     from_cur = current_user.default_cur
     to_cur=current_user.second_cur
+    
+    fav_currencies = [] 
 
-    return render_template('historical_rsi_value.html', csrf_rsi_token = generate_csrf(), csrf_alert_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur)
+    if current_user.fav_curs:
+        fav_curs = current_user.fav_curs.split(',')
+        fav_currencies = [currency for currency in currencies if currency.code in fav_curs]
+        currencies = [currency for currency in currencies if currency.code not in fav_curs]
+
+    return render_template('historical_rsi_value.html', csrf_rsi_token = generate_csrf(), csrf_alert_token = generate_csrf(), currencies=currencies, from_cur=from_cur, to_cur=to_cur, fav_currencies = fav_currencies)
 
 @currency_bp.route('/comparison', methods=['GET'])
 @login_required
@@ -49,8 +69,12 @@ def currency_comparison():
     popular_curs = current_app.config["POPULAR_CURRENCIES"]
 
     fav_curs = None
+    fav_currencies = [] 
+
     if current_user.fav_curs:
         fav_curs = current_user.fav_curs.split(',')
+        fav_currencies = [currency for currency in currencies if currency.code in fav_curs]
+        currencies = [currency for currency in currencies if currency.code not in fav_curs]
         if base_cur in fav_curs:
             fav_curs.remove(base_cur)
 
@@ -59,7 +83,7 @@ def currency_comparison():
 
 
     
-    return render_template('currency_comparison.html', csrf_token = generate_csrf(), currencies=currencies, base_cur=base_cur, popular_curs=popular_curs, fav_curs=fav_curs)
+    return render_template('currency_comparison.html', csrf_token = generate_csrf(), currencies=currencies, base_cur=base_cur, popular_curs=popular_curs, fav_curs=fav_curs, fav_currencies = fav_currencies)
 
 @currency_bp.route('/correlation-analysis', methods=['GET'])
 @login_required
@@ -67,10 +91,15 @@ def currency_correlation_analysis():
     currencies = Currency.query.all()
     popular_curs = current_app.config["POPULAR_CURRENCIES"]
     fav_curs = None
+    fav_currencies = [] 
+
     if current_user.fav_curs:
         fav_curs = current_user.fav_curs.split(',')
+        fav_currencies = [currency for currency in currencies if currency.code in fav_curs]
+        currencies = [currency for currency in currencies if currency.code not in fav_curs]
+
     
-    return render_template('currency_correlation.html', csrf_token = generate_csrf(), currencies=currencies, popular_curs=popular_curs, fav_curs=fav_curs)
+    return render_template('currency_correlation.html', csrf_token = generate_csrf(), currencies=currencies, popular_curs=popular_curs, fav_curs=fav_curs, fav_currencies = fav_currencies)
 
 @currency_bp.route('/latest-exrate', methods=['POST'])
 def retrieve_latest_rate():
@@ -279,7 +308,8 @@ def retrieve_currency_comparison():
                     print(f"Error: {response.status_code} - {response.text}")
                     return jsonify({'error': str(e)}), 400
                 
-            fetch_historical_exrate_url = "{}/historical?api_key={}&date={}&from={}".format(current_app.config['FAST_FOREX_API_URL'], current_app.config['FAST_FOREX_API_KEY'], start_date.strftime('%Y-%m-%d'), base_cur)
+            fetch_historical_exrate_url = "{}/historical?api_key={}&date={}&from={}".format(current_app.config['FAST_FOREX_API_URL'], 
+            current_app.config['FAST_FOREX_API_KEY'], start_date.strftime('%Y-%m-%d'), base_cur)
             response = requests.get(fetch_historical_exrate_url, headers=headers)
             if response.status_code == 200:
                 json_obj = response.json()  
@@ -339,7 +369,8 @@ def retrieve_currency_correlation():
             data=[]
             response=None
             while not response or 'future' in response.text:
-                fetch_exrate_url = "{}/fetch-multi?api_key={}&from={}&to={}".format(current_app.config['FAST_FOREX_API_URL'], current_app.config['FAST_FOREX_API_KEY'], base_cur, input_curs)
+                fetch_exrate_url = "{}/fetch-multi?api_key={}&from={}&to={}".format(current_app.config['FAST_FOREX_API_URL'], 
+                current_app.config['FAST_FOREX_API_KEY'], base_cur, input_curs)
                 response = requests.get(fetch_exrate_url, headers=headers)
                 up_to_date = False
                 while not up_to_date:
@@ -361,7 +392,8 @@ def retrieve_currency_correlation():
                         print(f"Error: {response.status_code} - {response.text}")
                         return jsonify({'error': str(e)}), 400
                     
-                fetch_historical_exrate_url = "{}/historical?api_key={}&date={}&from={}".format(current_app.config['FAST_FOREX_API_URL'], current_app.config['FAST_FOREX_API_KEY'], start_date.strftime('%Y-%m-%d'), base_cur)
+                fetch_historical_exrate_url = "{}/historical?api_key={}&date={}&from={}".format(current_app.config['FAST_FOREX_API_URL'], 
+                current_app.config['FAST_FOREX_API_KEY'], start_date.strftime('%Y-%m-%d'), base_cur)
                 response = requests.get(fetch_historical_exrate_url, headers=headers)
                 if response.status_code == 200:
                     json_obj = response.json()  

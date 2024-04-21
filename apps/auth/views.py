@@ -14,7 +14,7 @@ from apps import db
 from apps import mail
 from apps.models import Currency, Country
 from .tasks import send_reset_password_mail, send_verify_account_mail
-
+from itsdangerous import SignatureExpired, BadSignature 
 
 auth_bp = Blueprint('auth', __name__, template_folder='templates')
 
@@ -22,6 +22,8 @@ auth_bp = Blueprint('auth', __name__, template_folder='templates')
 def login():
     form = LoginForm()
 
+    if current_user.is_authenticated:
+        return redirect(url_for('views.home'))
     if request.method == 'POST' and form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
 
@@ -315,13 +317,20 @@ def google_login_callback():
         user = existing_user
 
     login_user(user)
-    return redirect(url_for("auth.add_profile"))
+    if not current_user.default_cur:
+        return redirect(url_for("auth.add_profile"))
+    else:
+        return redirect(url_for("views.home"))
 
 @auth_bp.route('/add-profile', methods=['GET', 'POST'])
+@login_required
 def add_profile():
     form = AddProfileForm()
     currencies = Currency.query.all()
     countries = Country.query.all()
+
+    if current_user.default_cur:
+        return redirect(url_for("views.home"))
 
     try:
         if request.method == 'POST' and form.validate_on_submit():

@@ -1,7 +1,10 @@
 {% extends 'sidebar.html' %} {% block content %}
 <div class="container-fluid">
     <h3 class="text-center" style="margin-bottom: 25px">
-        Currency Correlation Analysis
+        Currency Correlation Analysis     
+        <div style="  display: inline-block; border: 2px solid #000; border-radius: 100%; padding:0px 10px;margin-left:10px">
+            <i class="fa-solid fa-question fa-2xs"></i>
+          </div>
     </h3>
     <div class="d-flex justify-content-center align-items-center">
         <div style="width: 80%">
@@ -39,6 +42,15 @@
                     <div class="form-group col">
                         <div class='d-flex align-items-center'>
                             <select class="form-select cur_input">
+                                {% for currency in fav_currencies %}
+                                <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}" data-fav="{{url_for('static', filename='images/star-solid.svg')}}"
+                                        {% if cur == currency.code %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ currency.code }} - {{ currency.name }}
+                                </option>
+                                {% endfor %}
                                 {% for currency in currencies %}
                                     <option value="{{ currency.code }}" data-image="{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}"
                                         {% if cur == currency.code %}
@@ -83,25 +95,6 @@
 </div>
 
 <script>
-//Customize currency selection field
-function currencySelectionOption(option) {
-    if (!option.id) {
-        return option.text;
-    }
-
-    var imageUrl = $(option.element).data("image");
-    if (!imageUrl) {
-        return option.text;
-    }
-
-    return $(
-    '<span><img src="' +
-        imageUrl +
-        '" class="img-flag" style="width:25px;height:15px;margin-right:5px"/> ' +
-        option.text +
-        "</span>"
-    );
-}
 
 //Define chart customizations
 var options = {
@@ -156,12 +149,23 @@ function modifyCurrencySelection(compare_curs){
         var $newCurDiv = $('<div>').addClass('form-group col');
         var $layoutDiv = $('<div>').addClass('d-flex align-items-center');
 
-        var $select = $('<select>').addClass('form-select cur_input');            
+        var $select = $('<select>').addClass('form-select cur_input'); 
+        {% for currency in fav_currencies %}
+            var $option = $('<option>')
+                .attr('value', '{{ currency.code }}')
+                .attr('data-image', '{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}')
+                .attr('data-fav', '{{url_for('static', filename='images/star-solid.svg')}}')
+                .text('{{ currency.code }} - {{ currency.name }}');
+            if (compare_cur === '{{ currency.code }}') {
+                $option.prop('selected', true);
+            }
+            $select.append($option);
+        {% endfor %}            
         {% for currency in currencies %}
             var $option = $('<option>')
-                            .attr('value', '{{ currency.code }}')
-                            .attr('data-image', '{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}')
-                            .text('{{ currency.code }} - {{ currency.name }}');
+                .attr('value', '{{ currency.code }}')
+                .attr('data-image', '{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}')
+                .text('{{ currency.code }} - {{ currency.name }}');
             if (compare_cur === '{{ currency.code }}') {
                 $option.prop('selected', true);
             }
@@ -247,6 +251,16 @@ $(document).ready(function () {
         var $defaultOption = $('<option>').attr('value', '').attr('disabled', 'disabled').attr('selected', 'selected').text('Select Currency ...');
 
         $select.append($defaultOption);
+
+        {% for currency in fav_currencies %}
+            var $option = $('<option>')
+                .attr('value', '{{ currency.code }}')
+                .attr('data-image', '{{ url_for('static', filename='flags/' + currency.alpha_2_code.lower() + '.png') }}')
+                .attr('data-fav', '{{url_for('static', filename='images/star-solid.svg')}}')
+                .text('{{ currency.code }} - {{ currency.name }}');
+
+            $select.append($option);
+        {% endfor %}       
             
         {% for currency in currencies %}
         var $option = $('<option>')

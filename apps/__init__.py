@@ -68,7 +68,7 @@ def create_app():
     scheduler.add_job(func=periodically_currency_update, args=(app,'weekly'), trigger='cron', day_of_week='MON', hour='8', minute='0', id='weekly_currency_update')
     scheduler.add_job(func=periodically_currency_update, args=(app,'monthly'), trigger='cron', month='*', day=1, hour='8', minute='0', id='monthly_currency_update')
 
-    scheduler.add_job(func=alert_condition_check, args=(app,), trigger='interval', seconds=1200, id='alert_condition_check')
+    scheduler.add_job(func=alert_condition_check, args=(app,), trigger='interval', seconds=300, id='alert_condition_check')
 
     scheduler.start()
 

@@ -121,7 +121,7 @@ $(document).ready(function() {
   
   $('#create_alert_form').submit(function(event) {
     event.preventDefault();
-    
+
     if ((($('#alert_type').val()=="conditionally") && ($("#condition").val() == "more" &&  $("#current_rate").text() > $("#rate").val()) || 
         ($("#condition").val() == "less" && $("#current_rate").text() < $("#rate").val()))) {
         $("#errorMessage").text('The condition had already been met');

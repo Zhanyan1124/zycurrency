@@ -24,6 +24,8 @@ def periodically_currency_update(app, duration):
                     exchange_rate = result[alert.to_cur_code]
                     # print(f"Exchange rate for {alert.from_cur_code} to {alert.to_cur_code}: {exchange_rate}")
                     text = f"Today's rate for {alert.from_cur_code} to {alert.to_cur_code} <br> <strong> 1 {alert.from_cur_code} = {exchange_rate} {alert.to_cur_code} </strong>"
+                    if alert.notes:
+                        text += f"<br>Notes: {alert.notes}"
                 else:
                     print(f"Error: {response.status_code} - {response.text}")
                     create_notification = False
@@ -34,6 +36,8 @@ def periodically_currency_update(app, duration):
                 latest_rsi = rsi_value[-1]
                 if latest_rsi:
                     text = f"Today's RSI value for {alert.from_cur_code} to {alert.to_cur_code} <br> <strong> {latest_rsi} </strong>"
+                    if alert.notes:
+                        text += f"<br>Notes: {alert.notes}"
                     # print(f"RSI value for {alert.from_cur_code} to {alert.to_cur_code}: {latest_rsi}")
                 else:
                     print(f"Error retrieving the latest rsi")
@@ -49,9 +53,10 @@ def periodically_currency_update(app, duration):
             if send_email:
                 sign_in_url = current_app.config['URL_DOMAIN_WITH_PROTOCOL'] + "/auth/login"
                 print(sign_in_url)
-                html_template = render_template('mails/periodic_notification_mail.html', indicator = alert.indicator, from_cur = alert.from_cur_code, to_cur = alert.to_cur_code, exchange_rate = exchange_rate, latest_rsi = latest_rsi, sign_in_url = sign_in_url)
+                html_template = render_template('mails/periodic_notification_mail.html', indicator = alert.indicator, from_cur = alert.from_cur_code, to_cur = alert.to_cur_code, exchange_rate = exchange_rate, latest_rsi = latest_rsi, sign_in_url = sign_in_url, notes = alert.notes)
                 user = User.query.get(alert.user_id)
                 send_periodic_notification_mail.delay(user.email, alert.period, html_template)
+                
 
 def alert_condition_check(app):
     with app.app_context():
@@ -72,11 +77,13 @@ def alert_condition_check(app):
                     if alert.condition == "more" and exchange_rate > threshold_value:
                         threshold_met = True
                         text = f"The current rate for {alert.from_cur_code} to {alert.to_cur_code} <br> <strong> 1 {alert.from_cur_code} = {exchange_rate} {alert.to_cur_code} </strong> <br> which is <strong>></strong> rate threshold <strong> {threshold_value} </strong>"
+                        if alert.notes:
+                            text += f"<br>Notes: {alert.notes}"
                     elif alert.condition == "less" and exchange_rate < threshold_value:
                         threshold_met = True
                         text = f"The current rate for {alert.from_cur_code} to {alert.to_cur_code} <br> <strong> 1 {alert.from_cur_code} = {exchange_rate} {alert.to_cur_code} </strong> <br> which is <strong><</strong> rate threshold <strong> {threshold_value} </strong>"
-
-
+                        if alert.notes:
+                            text += f"<br>Notes: {alert.notes}"
                 else:
                     print(f"Error: {response.status_code} - {response.text}")
 
@@ -90,10 +97,14 @@ def alert_condition_check(app):
 
                         threshold_met = True
                         text = f"The current RSI value for {alert.from_cur_code} to {alert.to_cur_code} is <strong> {latest_rsi} </strong> <br> which is <strong>></strong> threshold <strong>{threshold_value}</strong>"
+                        if alert.notes:
+                            text += f"<br>Notes: {alert.notes}"
 
                     elif alert.condition == "less" and latest_rsi < threshold_value:
                         threshold_met = True
                         text = f"The current RSI value for {alert.from_cur_code} to {alert.to_cur_code} is <strong> {latest_rsi} </strong> <br> which is <strong><</strong> threshold <strong>{threshold_value}</strong>"
+                        if alert.notes:
+                            text += f"<br>Notes: {alert.notes}"
 
                 else:
                     print(f"Error retrieving the latest rsi")
@@ -106,7 +117,7 @@ def alert_condition_check(app):
                     db.session.add(new_notification)
                 if alert.notify_email:
                     sign_in_url = current_app.config['URL_DOMAIN_WITH_PROTOCOL'] + "/auth/login"
-                    html_template = render_template('mails/conditional_notification_mail.html', indicator = alert.indicator, from_cur = alert.from_cur_code, to_cur = alert.to_cur_code, exchange_rate = exchange_rate, latest_rsi = latest_rsi, condition = alert.condition, threshold_value = threshold_value, sign_in_url = sign_in_url)
+                    html_template = render_template('mails/conditional_notification_mail.html', indicator = alert.indicator, from_cur = alert.from_cur_code, to_cur = alert.to_cur_code, exchange_rate = exchange_rate, latest_rsi = latest_rsi, condition = alert.condition, threshold_value = threshold_value, sign_in_url = sign_in_url, notes = alert.notes)
                     user = User.query.get(alert.user_id)
                     send_conditional_notification_mail.delay(user.email, html_template)
 

@@ -27,6 +27,14 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        {% if notes %}
+                        <tr>
+                            <td align="center" valign="top"
+                                style="font-size: 25px; font-weight:bold; line-height: 30px; padding-bottom: 20px;">
+                                Notes: {{notes}}
+                            </td>
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </td>

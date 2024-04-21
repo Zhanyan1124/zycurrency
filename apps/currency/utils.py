@@ -1,6 +1,7 @@
 from flask import current_app
 import requests
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 def get_latest_rate(from_cur, to_cur):
     headers = {"accept": "application/json"}
@@ -17,13 +18,14 @@ def get_rsi_value(from_cur, to_cur, duration):
     elif duration.endswith('y'):    
         start_date = end_date - relativedelta(years=int(duration[:-1]))
     start_date = start_date - timedelta(days=14)
-
     headers = {"accept": "application/json"}
-    time_series_url = "{}/time-series?api_key={}&from={}&to={}&start={}&end={}".format(current_app.config['FAST_FOREX_API_URL'], current_app.config['FAST_FOREX_API_KEY'], from_cur, to_cur, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
-    
+
     response=None
     # If currency for current date is not updated, thus need to use the previous date as latest currency
     while not response or 'future' in response.text:
+
+        time_series_url = "{}/time-series?api_key={}&from={}&to={}&start={}&end={}".format(current_app.config['FAST_FOREX_API_URL'], current_app.config['FAST_FOREX_API_KEY'], from_cur, to_cur, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
+    
         response = requests.get(time_series_url, headers=headers)
 
         if response.status_code == 200:

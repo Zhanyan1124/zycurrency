@@ -16,9 +16,9 @@ def send_periodic_notification_mail(email, period, html_template):
 @shared_task()
 def send_conditional_notification_mail(email, html_template):
     print('Sending notification email')
-    msg = Message("Alert Threshold has been Met"), 
+    msg = Message("Alert Threshold has been Met", 
     sender=current_app.config["MAIL_USERNAME"], 
-    recipients=[email]
+    recipients=[email])
     msg.html = html_template
     mail.send(msg)
     return 'Sent Conditional Notification Email'
