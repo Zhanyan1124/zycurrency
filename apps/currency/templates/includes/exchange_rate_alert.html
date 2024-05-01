@@ -121,7 +121,7 @@ $(document).ready(function() {
   
   $('#create_alert_form').submit(function(event) {
     event.preventDefault();
-    if ($("#rate").val() === null || $("#rate").val() === "") {
+    if ($('input[name="alert_type"]:checked').val() == "conditionally"&& ($("#rate").val() === null || $("#rate").val() === "")) {
       $("#successMessage").hide();
       $("#errorMessage").text('Target rate is required');
       $("#errorMessage").show();

@@ -220,7 +220,6 @@
         curve: 'smooth',
       },
       title: {
-        text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical RSI Values",
         align: 'center',
         margin: 10,
         offsetX: 0,
@@ -242,36 +241,6 @@
       xaxis: {
         type: "datetime"
       },
-      annotations: {
-        yaxis: [
-          {
-            y: 70,
-            strokeDashArray: 1,
-            borderColor: 'black',
-            label: {
-              borderColor: 'black',
-              style: {
-                color: '#fff',
-                background: 'black'
-              },
-              text: 'Overbought'
-            }
-          },
-          {
-            y: 30,
-            strokeDashArray: 1,
-            borderColor: 'black',
-            label: {
-              borderColor: 'black',
-              style: {
-                color: '#fff',
-                background: 'black'
-              },
-              text: 'Oversold'
-            }
-          },
-        ]
-      }
     };
     var chart = new ApexCharts(document.querySelector("#rsiChart"), options);
     chart.render();
@@ -304,7 +273,37 @@
         chart.updateOptions({
           title: {
             text: $("#from_cur").val() + " / " + $("#to_cur").val() + " Historical RSI Values",
-          }
+          },
+          annotations: {
+            yaxis: [
+                {
+                    y: 70,
+                    strokeDashArray: 1,
+                    borderColor: 'black',
+                    label: {
+                        borderColor: 'black',
+                        style: {
+                            color: '#fff',
+                            background: 'black'
+                        },
+                        text: 'Overbought'
+                    }
+                },
+                {
+                    y: 30,
+                    strokeDashArray: 1,
+                    borderColor: 'black',
+                    label: {
+                        borderColor: 'black',
+                        style: {
+                            color: '#fff',
+                            background: 'black'
+                        },
+                        text: 'Oversold'
+                    }
+                },
+                ]
+            }
         })
       },
       error: function (xhr, status, error) {

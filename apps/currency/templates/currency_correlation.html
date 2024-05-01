@@ -292,6 +292,7 @@ $(document).ready(function () {
     //Remove Currency
     $(document).on('click', '.fa-minus', function() {
         $(this).closest('.form-group').remove();
+        $('.cur_input').change();
         $('input[name="selection"]').prop('checked', false);
     });
 

@@ -151,7 +151,9 @@ $(document).ready(function() {
     
     $('#create_alert_form').submit(function(event) {
         event.preventDefault();
-        if ($("#rsi_val").val() === null || $("#rsi_val").val() === "") {
+        var alert_type = $('input[name="alert_type"]:checked').val();
+        
+        if ($('input[name="alert_type"]:checked').val() == "conditionally"&& ($("#rsi_val").val() === null || $("#rsi_val").val() === "")) {
             $("#successMessage").hide();
             $("#errorMessage").text('Target RSI value is required');
             $("#errorMessage").show();
