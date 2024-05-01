@@ -262,6 +262,7 @@
 
     $('.toggle_alert').change(function() {
       var alertId = $(this).data('alert-id'); 
+      
       $.ajax({
           url: '/alert/toggle/' + alertId, 
           type: 'PUT',

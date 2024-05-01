@@ -130,7 +130,7 @@
       var fromCurValue = $('#from_cur').val();
       var toCurValue = $('#to_cur').val();
       var amountValue = $('#amount').val();
-      if (fromCurValue != "" && toCurValue!="" && amountValue != "")
+      if (fromCurValue != "" && toCurValue!="" && amountValue != "" && fromCurValue!=toCurValue)
         $('#convert_form').submit();
     });
 

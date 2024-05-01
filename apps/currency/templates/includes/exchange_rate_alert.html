@@ -121,9 +121,14 @@ $(document).ready(function() {
   
   $('#create_alert_form').submit(function(event) {
     event.preventDefault();
-
-    if ((($('#alert_type').val()=="conditionally") && ($("#condition").val() == "more" &&  $("#current_rate").text() > $("#rate").val()) || 
+    if ($("#rate").val() === null || $("#rate").val() === "") {
+      $("#successMessage").hide();
+      $("#errorMessage").text('Target rate is required');
+      $("#errorMessage").show();
+    }
+    else if (($('input[name="alert_type"]:checked').val() == "conditionally" && ($("#condition").val() == "more" &&  $("#current_rate").text() > $("#rate").val()) || 
         ($("#condition").val() == "less" && $("#current_rate").text() < $("#rate").val()))) {
+        $("#successMessage").hide();
         $("#errorMessage").text('The condition had already been met');
         $("#errorMessage").show();
     }

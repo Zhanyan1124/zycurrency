@@ -138,6 +138,9 @@ def forget_password():
         if request.method == 'POST' and form.validate_on_submit():
             form.populate_obj(request.form)
             email = form.email.data
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                raise Exception("Email cannot be recognized") 
             serializer = current_app.config['SERIALIZER']
             token = serializer.dumps(email, salt='reset-password')
             
@@ -158,8 +161,11 @@ def reset_password(token):
     serializer = current_app.config['SERIALIZER']
     try:
         email = serializer.loads(token, salt='reset-password', max_age=1800)
-    except Exception as e:
-        abort(404)
+    except SignatureExpired:
+        flash('Reset Password link has expired.', 'danger')
+        return redirect(url_for('auth.login'))
+    except BadSignature:
+        abort(404) 
     
     form.email.data = email
     try:

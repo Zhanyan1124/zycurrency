@@ -151,9 +151,15 @@ $(document).ready(function() {
     
     $('#create_alert_form').submit(function(event) {
         event.preventDefault();
+        if ($("#rsi_val").val() === null || $("#rsi_val").val() === "") {
+            $("#successMessage").hide();
+            $("#errorMessage").text('Target RSI value is required');
+            $("#errorMessage").show();
+        }
 
-        if ((($('#alert_type').val()=="conditionally") && ($("#condition").val() == "more" &&  $("#current_rsi").text() > $("#rsi_val").val()) || 
+        else if (($('input[name="alert_type"]:checked').val() == "conditionally"&& ($("#condition").val() == "more" &&  $("#current_rsi").text() > $("#rsi_val").val()) || 
             ($("#condition").val() == "less" && $("#current_rsi").text() < $("#rsi_val").val()))) {
+            $("#successMessage").hide();
             $("#errorMessage").text('The condition had already been met');
             $("#errorMessage").show();
         }

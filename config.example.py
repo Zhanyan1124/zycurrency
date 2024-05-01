@@ -7,6 +7,7 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
     SQLALCHEMY_DATABASE_URI = f'sqlite:///zycurrency.db'
     URL_DOMAIN_WITH_PROTOCOL = 'http://127.0.0.1:5000'
+    SERVER_NAME = "127.0.0.1:5000"
 
     GOOGLE_CLIENT_ID=os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET=os.getenv("GOOGLE_CLIENT_SECRET")
@@ -28,3 +29,5 @@ class Config:
 
     POPULAR_CURRENCIES= ['USD', 'EUR', 'JPY', 'GBP', 'CNY'] 
     POPULAR_CURRENCIES_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD', 'USD/CAD']
+
+    SCHEDULER_API_ENABLED = True

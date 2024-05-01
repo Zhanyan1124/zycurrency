@@ -105,7 +105,7 @@ def alert_condition_check(app):
                         text = f"The current RSI value for {alert.from_cur_code} to {alert.to_cur_code} is <strong> {latest_rsi} </strong> <br> which is <strong><</strong> threshold <strong>{threshold_value}</strong>"
                         if alert.notes:
                             text += f"<br>Notes: {alert.notes}"
-
+    
                 else:
                     print(f"Error retrieving the latest rsi")
 
