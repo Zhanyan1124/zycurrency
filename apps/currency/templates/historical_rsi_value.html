@@ -247,6 +247,7 @@
 
     //Send first ajax request when page initially load
     var formData = $("#get_historical_form").serialize();
+    console.log(formData)
     $.ajax({
       url: "/currency/historical-rsi",
       type: "POST",

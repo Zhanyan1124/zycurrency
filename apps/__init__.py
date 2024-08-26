@@ -64,7 +64,7 @@ def create_app():
     login_manager.init_app(app)
 
     from apps.alert.tasks import periodically_currency_update, alert_condition_check
-    scheduler.add_job(func=periodically_currency_update, args=(app,'daily'), trigger='cron', day_of_week='*', hour='8', minute='0', id='daily_currency_update')
+    scheduler.add_job(func=periodically_currency_update, args=(app,'daily'), trigger='cron', day_of_week='*', hour='13', minute='53', id='daily_currency_update')
     scheduler.add_job(func=periodically_currency_update, args=(app,'weekly'), trigger='cron', day_of_week='MON', hour='8', minute='0', id='weekly_currency_update')
     scheduler.add_job(func=periodically_currency_update, args=(app,'monthly'), trigger='cron', month='*', day=1, hour='8', minute='0', id='monthly_currency_update')
 

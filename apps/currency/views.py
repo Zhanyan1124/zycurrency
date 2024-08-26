@@ -235,7 +235,6 @@ def retrieve_historical_rsi_values():
         from_cur = request.form.get('from_cur')
         to_cur = request.form.get('to_cur')
         duration=request.form.get('duration')
-
         if from_cur is None or to_cur is None:
             raise DataMissingException('Select currency to proceed')
         if duration is None:
